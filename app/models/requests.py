@@ -3,6 +3,7 @@ from typing import Any
 
 class CreateSessionRequest(BaseModel):
     language: str = "en"
+    portal_id: int  # For POC: required portal ID for state tracking
 
 class ConversationMessageRequest(BaseModel):
     session_id: str
