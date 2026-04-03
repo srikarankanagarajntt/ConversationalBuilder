@@ -1,0 +1,33 @@
+<main class="page">
+  <section class="card">
+    <h1>Conversational CV Builder POC</h1>
+    <p>Minimal Angular client for FastAPI + GPT-4.1 integration testing.</p>
+
+    <div class="row">
+      <label>User ID</label>
+      <input [(ngModel)]="userId" placeholder="dev-user" />
+      <button (click)="createSession()" [disabled]="loading">Create Session</button>
+    </div>
+
+    <p *ngIf="sessionId" class="session">Session: {{ sessionId }}</p>
+
+    <div class="row">
+      <label>Conversation Message</label>
+      <textarea [(ngModel)]="message" rows="3" placeholder="I worked at Contoso as a senior backend engineer."></textarea>
+      <button (click)="sendMessage()" [disabled]="loading || !sessionId">Send Message</button>
+    </div>
+
+    <p *ngIf="assistantReply"><strong>Assistant:</strong> {{ assistantReply }}</p>
+    <p *ngIf="missingFields.length"><strong>Missing fields:</strong> {{ missingFields.join(', ') }}</p>
+
+    <hr />
+
+    <div class="row">
+      <label>Direct LLM POC Prompt</label>
+      <textarea [(ngModel)]="llmPrompt" rows="3"></textarea>
+      <button (click)="testLlm()" [disabled]="loading">Test GPT-4.1</button>
+    </div>
+
+    <p *ngIf="llmOutput"><strong>LLM Output:</strong> {{ llmOutput }}</p>
+  </section>
+</main>
