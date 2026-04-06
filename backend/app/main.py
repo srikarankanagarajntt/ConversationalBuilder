@@ -1,9 +1,17 @@
 """FastAPI application entry point."""
-from fastapi import FastAPI
+import logging
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.core.config import settings
+from app.core.logging_config import configure_logging
 from app.api import health, conversation, voice, upload, template, preview, export, llm
+
+configure_logging()
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Conversational CV Builder API",
@@ -31,3 +39,43 @@ app.include_router(template.router, prefix="/api", tags=["Template"])
 app.include_router(preview.router, prefix="/api", tags=["Preview"])
 app.include_router(export.router, prefix="/api", tags=["Export"])
 app.include_router(llm.router, prefix="/api", tags=["LLM POC"])
+
+
+def _exc_info(exc: BaseException) -> tuple[type[BaseException], BaseException, object]:
+    return (type(exc), exc, exc.__traceback__)
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+    logger.error(
+        "HTTPException | method=%s | path=%s | status=%s | detail=%s",
+        request.method,
+        request.url.path,
+        exc.status_code,
+        exc.detail,
+        exc_info=_exc_info(exc),
+    )
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    logger.error(
+        "RequestValidationError | method=%s | path=%s | errors=%s",
+        request.method,
+        request.url.path,
+        exc.errors(),
+        exc_info=_exc_info(exc),
+    )
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.error(
+        "Unhandled exception | method=%s | path=%s",
+        request.method,
+        request.url.path,
+        exc_info=_exc_info(exc),
+    )
+    return JSONResponse(status_code=500, content={"detail": "Internal server error."})
