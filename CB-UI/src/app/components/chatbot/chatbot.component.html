@@ -1,0 +1,60 @@
+<div class="flex-grow-1 w-100 px-4 overflow-auto" *ngIf="messages.length > 0" #messageArea style="max-height: 89%;">
+    <div class="mx-auto" style="max-width: 1000px;">
+        <div *ngFor="let msg of messages" class="mb-2 d-flex"
+            [ngClass]="{'justify-content-end': msg.type === 'sender', 'justify-content-start': msg.type === 'receiver'}">
+
+            <div class="p-2 rounded" [ngClass]="{
+            'sender': msg.type === 'sender',
+            'bg-white': msg.type === 'receiver'
+          }" [ngStyle]="msg.type === 'sender' ? {'max-width': '300px', width: 'auto'} : {}">
+                {{msg.text}}
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Input -->
+<div>
+    <h3 class="mb-4" style="text-align: center;" *ngIf="messages.length == 0">Build your resume with AI</h3>
+    <div class="w-100 p-3 d-flex justify-content-center">
+        <div class="d-flex gap-2 w-100" [ngStyle]="{'max-width' : messages.length == 0 ? '700px' : '1000px'}">
+            <!-- <button class="btn btn-outline-secondary" (click)="fileInput.click()">📁</button> -->
+
+            <!-- Dropdown -->
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                    +
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item d-flex align-items-left gap-2" (click)="fileInput.click()">
+                            &nbsp;📤 Upload File
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-left gap-2" (click)="showTemplate = true">
+                            📲 Choose Template
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <input type="file" #fileInput hidden (change)="onFileUpload($event)" />
+
+            <input [(ngModel)]="input" class="form-control"
+                placeholder="Tell me about yourself or upload your resume..." (keydown.enter)="send()" />
+
+            <button class="btn btn-outline-secondary" (click)="recordVoice()"
+                [style.background]="isRecordingInProgress ? 'lightgrey' : 'white'">{{ isRecordingInProgress ? '🔴' :
+                '🎤'}}</button>
+            <button class="btn btn-primary" (click)="send()">Send</button>
+        </div>
+    </div>
+</div>
+
+<!-- Template Chooser -->
+<app-template-chooser [showTemplate]="showTemplate" (confirmTemplate)="confirmTemplate($event)"></app-template-chooser>
+
+<!-- Resume Preview Screen -->
+<app-resume-previewer (resetTemplate)="reset()"></app-resume-previewer>

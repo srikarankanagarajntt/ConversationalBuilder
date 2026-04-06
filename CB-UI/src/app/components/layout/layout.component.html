@@ -1,0 +1,22 @@
+<div class="d-flex vh-100"> <!-- Sidebar -->
+  <div class="bg-light border-end p-3" style="width: 260px;" *ngIf="!collapsed">
+    <h5 class="mb-3">Resumes</h5>
+    <button class="btn btn-primary w-100 mb-3">+ New Resume</button>
+    <ul class="list-group">
+      <li class="list-group-item" *ngFor="let item of history">{{item}}</li>
+    </ul>
+  </div> <!-- Main -->
+  <div class="flex-grow-1 d-flex flex-column"><!-- Header -->
+    <div class="border-bottom p-2 d-flex justify-content-between">
+      <button class="btn btn-sm btn-outline-secondary" (click)="collapsed = !collapsed">☰</button>
+      <h6 class="m-0">AI Resume Builder</h6>
+      <div>
+        <h6 class="justify-content-end">User: {{ portalId }} {{this.chatbot && this.chatbot.messages.length == 0}} </h6>
+      </div>
+    </div>
+
+    <div class="chatbot" style="margin-top: auto; max-height: 93%;" [ngStyle]="{ 'margin-top' : (this.chatbot && this.chatbot.messages.length == 0) ? '250px' : 'auto'}">
+        <app-chatbot #chatbot (newMessageAdded)="onNewMessageAdded()"></app-chatbot>
+    </div>
+  </div>
+</div>
