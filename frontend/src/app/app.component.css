@@ -50,6 +50,32 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.audio-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #0a7a58;
+}
+
+.audio-btn svg {
+  fill: currentColor;
+}
+
+.audio-btn.recording {
+  background: #d33d2f;
+}
+
+.error {
+  color: #a4161a;
+  font-weight: 600;
+}
+
 .session {
   padding: 8px 10px;
   border-radius: 8px;

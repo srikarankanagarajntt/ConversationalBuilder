@@ -14,6 +14,8 @@ export interface ConversationResponse {
   sessionId: string;
   reply: string;
   missingFields: string[];
+  nextQuestion?: string | null;
+  transcript?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -29,6 +31,13 @@ export class CvApiService {
       sessionId,
       message,
     });
+  }
+
+  sendVoiceMessage(sessionId: string, audioBlob: Blob, filename = 'recording.webm'): Observable<ConversationResponse> {
+    const form = new FormData();
+    form.append('session_id', sessionId);
+    form.append('file', audioBlob, filename);
+    return this.http.post<ConversationResponse>(`${environment.apiBaseUrl}/voice/message`, form);
   }
 
   testLlm(prompt: string): Observable<{ model: string; output: string }> {

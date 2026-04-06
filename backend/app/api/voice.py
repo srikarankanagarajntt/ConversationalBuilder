@@ -32,4 +32,6 @@ async def voice_message(
     """Transcribe audio then feed transcript into the conversation flow."""
     audio_bytes = await file.read()
     transcript = await speech_service.transcribe(audio_bytes, filename=file.filename or "audio.wav")
-    return await conversation_service.handle_message(session_id, transcript)
+    response = await conversation_service.handle_message(session_id, transcript)
+    response.transcript = transcript
+    return response

@@ -19,10 +19,8 @@ async def create_session(
     body: CreateSessionRequest,
 ):
     """Create a new CV-building session."""
-    from datetime import datetime
-
     session_id = str(uuid.uuid4())
-    session = state_service.create_session(session_id, user_id=body.userId or principal.get("sub"))
+    session = state_service.create_session(session_id, user_id=body.userId)
     return SessionResponse(
         sessionId=session.sessionId,
         createdAt=session.createdAt,

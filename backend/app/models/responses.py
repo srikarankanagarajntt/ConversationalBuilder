@@ -19,6 +19,7 @@ class ConversationResponse(BaseModel):
     cvDraft: CvSchema
     missingFields: List[str] = []
     nextQuestion: Optional[str] = None
+    transcript: Optional[str] = None
 
 
 class TranscribeResponse(BaseModel):
