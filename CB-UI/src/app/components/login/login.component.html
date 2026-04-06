@@ -1,0 +1,10 @@
+<!-- Input -->
+<div [ngStyle]="{'margin-top': '250px'}" style="text-align: center;">
+    <h3 class="mb-4" style="text-align: center;">Login</h3>
+    <div class="w-100 p-3 d-flex justify-content-center">
+        <div class="d-flex gap-2 w-100" [ngStyle]="{'max-width' : '700px'}">
+            <input [(ngModel)]="portalId" class="form-control" placeholder="Enter your Portal ID..." />
+        </div>
+    </div>
+    <button class="btn btn-primary" (click)="login()">Login</button>
+</div>

@@ -1,0 +1,47 @@
+<!-- Template Modal -->
+<div class="modal fade show d-block" *ngIf="showTemplate">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5>Select Template</h5>
+        <button class="btn-close" (click)="showTemplate=false"></button>
+      </div>
+
+      <div class="modal-body d-flex" style="height:500px;">
+
+        <!-- Left Grid -->
+        <div class="w-40 border-end p-2 overflow-auto">
+          <div class="row">
+            <div class=" mb-3" *ngFor="let t of templates">
+              <div class="card" [class.border-primary]="selectedTemplate===t" (click)="selectTemplate(t)">
+                <div class="card-body">
+                  <div class="bg-secondary" style="height:120px;"></div>
+                  <p class="mt-2 text-center">{{t.name}}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Preview -->
+        <div class="w-100 p-3">
+          <div *ngIf="selectedTemplate" class="border h-100 overflow-auto bg-white p-3">
+            <h5>{{selectedTemplate.name}} Preview</h5>
+            <p>(Resume preview mock)</p>
+          </div>
+          <div *ngIf="!selectedTemplate" class="text-center text-muted mt-5">
+            Select a template to preview
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showTemplate=false">Cancel</button>
+        <button class="btn btn-primary" [disabled]="!selectedTemplate" (click)="confirmTemplate()">Use Template</button>
+      </div>
+
+    </div>
+
+  </div>
+</div>
