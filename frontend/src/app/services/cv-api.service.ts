@@ -40,6 +40,10 @@ export class CvApiService {
     return this.http.post<ConversationResponse>(`${environment.apiBaseUrl}/voice/message`, form);
   }
 
+  speakText(text: string, voice?: string, format = 'mp3'): Observable<Blob> {
+    return this.http.post(`${environment.apiBaseUrl}/voice/speak`, { text, voice, format }, { responseType: 'blob' });
+  }
+
   testLlm(prompt: string): Observable<{ model: string; output: string }> {
     return this.http.post<{ model: string; output: string }>(`${environment.apiBaseUrl}/llm/test`, {
       prompt,

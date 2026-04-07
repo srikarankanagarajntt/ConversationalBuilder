@@ -27,6 +27,7 @@ export class AppComponent {
 
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
+  private currentAudioUrl: string | null = null;
 
   constructor(private readonly api: CvApiService) {}
 
@@ -133,11 +134,49 @@ export class AppComponent {
         this.assistantReply = res.reply;
         this.missingFields = res.missingFields;
         this.loading = false;
+
+        if (this.transcript) {
+          this.speakTranscript(this.transcript);
+        }
       },
       error: () => {
         this.errorMessage = 'Failed to process voice message.';
         this.loading = false;
       },
+    });
+  }
+
+  private speakTranscript(text: string): void {
+    this.api.speakText(text).subscribe({
+      next: (audioBlob: Blob) => {
+        this.playAudioBlob(audioBlob);
+      },
+      error: () => {
+        // Keep conversation flow successful even if TTS fails.
+        this.errorMessage = 'Transcript available, but audio playback generation failed.';
+      },
+    });
+  }
+
+  private playAudioBlob(audioBlob: Blob): void {
+    if (this.currentAudioUrl) {
+      URL.revokeObjectURL(this.currentAudioUrl);
+      this.currentAudioUrl = null;
+    }
+
+    const audioUrl = URL.createObjectURL(audioBlob);
+    this.currentAudioUrl = audioUrl;
+    const audio = new Audio(audioUrl);
+
+    audio.onended = () => {
+      if (this.currentAudioUrl) {
+        URL.revokeObjectURL(this.currentAudioUrl);
+        this.currentAudioUrl = null;
+      }
+    };
+
+    audio.play().catch(() => {
+      this.errorMessage = 'Transcript audio is ready but browser blocked auto-play. Interact and retry.';
     });
   }
 
