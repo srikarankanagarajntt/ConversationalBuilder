@@ -13,7 +13,7 @@
 
     <div class="row">
       <label>Conversation Message</label>
-      <textarea [(ngModel)]="message" rows="3" placeholder="I worked at Contoso as a senior backend engineer."></textarea>
+      <textarea [(ngModel)]="message" rows="3" placeholder="Say “Hi” — let’s create your CV together"></textarea>
       <div class="actions">
         <button (click)="sendMessage()" [disabled]="loading || !sessionId">Send Message</button>
         <button
@@ -47,17 +47,41 @@
     <p *ngIf="transcript"><strong>Transcript:</strong> {{ transcript }}</p>
 
     <p *ngIf="assistantReply"><strong>Assistant:</strong> {{ assistantReply }}</p>
-    <p *ngIf="missingFields.length"><strong>Missing fields:</strong> {{ missingFields.join(', ') }}</p>
+
+    <div *ngIf="missingFields.length" class="warning-box">
+      <strong>⚠️ Missing Information:</strong>
+      <ul>
+        <li *ngFor="let field of missingFields">{{ formatFieldName(field) }}</li>
+      </ul>
+    </div>
+
     <p *ngIf="errorMessage" class="error">{{ errorMessage }}</p>
 
     <hr />
 
     <div class="row">
-      <label>Enter your role to generate a powerful CV summary.</label>
-      <textarea [(ngModel)]="llmPrompt" rows="3"></textarea>
-      <button (click)="testLlm()" [disabled]="loading">Generate Summary</button>
+      <label>Export CV</label>
+      <div class="actions">
+        <button (click)="exportCv('pdf')" [disabled]="loading || !sessionId">Export as PDF</button>
+        <button (click)="exportCv('docx')" [disabled]="loading || !sessionId">Export as DOCX</button>
+        <button (click)="exportCv('json')" [disabled]="loading || !sessionId">Export as JSON</button>
+      </div>
     </div>
 
-    <p *ngIf="llmOutput"><strong>Assistant:</strong> {{ llmOutput }}</p>
+    <div class="row">
+      <button (click)="toggleSummaryForm()" [disabled]="loading">
+        {{ showSummaryForm ? 'Hide Summary Form' : 'Generate Summary' }}
+      </button>
+    </div>
+
+    <div *ngIf="showSummaryForm" class="row">
+      <label>Enter your role to generate a powerful CV summary.</label>
+      <textarea [(ngModel)]="llmPrompt" rows="3"></textarea>
+      <div class="actions">
+        <button (click)="testLlm()" [disabled]="loading || !llmPrompt.trim()">Send</button>
+      </div>
+    </div>
+
+    <p *ngIf="llmOutput"><strong>Generated Summary:</strong> {{ llmOutput }}</p>
   </section>
 </main>

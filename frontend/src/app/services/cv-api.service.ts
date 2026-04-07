@@ -44,6 +44,17 @@ export class CvApiService {
     return this.http.post(`${environment.apiBaseUrl}/voice/speak`, { text, voice, format }, { responseType: 'blob' });
   }
 
+  exportCv(sessionId: string, format: 'pdf' | 'docx' | 'json'): Observable<{ jobId: string; downloadUrl: string }> {
+    return this.http.post<{ jobId: string; downloadUrl: string }>(`${environment.apiBaseUrl}/export`, {
+      sessionId,
+      format,
+    });
+  }
+
+  downloadFile(fileId: string): Observable<Blob> {
+    return this.http.get(`${environment.apiBaseUrl}/download/${fileId}`, { responseType: 'blob' });
+  }
+
   testLlm(prompt: string): Observable<{ model: string; output: string }> {
     return this.http.post<{ model: string; output: string }>(`${environment.apiBaseUrl}/llm/test`, {
       prompt,

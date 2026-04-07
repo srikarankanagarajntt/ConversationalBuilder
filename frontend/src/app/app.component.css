@@ -82,3 +82,29 @@ button:disabled {
   background: #f1f5ff;
   border: 1px solid #dde7ff;
 }
+
+.warning-box {
+  margin: 16px 0;
+  padding: 12px 15px;
+  border-radius: 8px;
+  background: #fff8e1;
+  border-left: 4px solid #f57f17;
+  border: 1px solid #ffe0b2;
+}
+
+.warning-box strong {
+  color: #f57f17;
+  font-weight: 600;
+}
+
+.warning-box ul {
+  margin: 8px 0 0 0;
+  padding-left: 20px;
+  list-style: disc;
+}
+
+.warning-box li {
+  margin: 4px 0;
+  color: #e65100;
+  font-weight: 500;
+}

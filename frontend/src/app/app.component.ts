@@ -25,6 +25,7 @@ export class AppComponent {
   loading = false;
   recording = false;
   playingAudio = false;
+  showSummaryForm = false;
 
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
@@ -200,6 +201,23 @@ export class AppComponent {
     });
   }
 
+  toggleSummaryForm(): void {
+    this.showSummaryForm = !this.showSummaryForm;
+    this.llmOutput = '';
+  }
+
+  formatFieldName(field: string): string {
+    // Convert "personalInfo.fullName" to "Full Name"
+    // Remove the prefix (personalInfo., experience., etc.)
+    const fieldName = field.split('.').pop() || field;
+    
+    // Convert camelCase to Title Case
+    return fieldName
+      .replace(/([A-Z])/g, ' $1') // Insert space before capitals
+      .replace(/^./, (c) => c.toUpperCase()) // Capitalize first letter
+      .trim();
+  }
+
   playAssistantReply(): void {
     if (!this.assistantReply.trim()) {
       this.errorMessage = 'No assistant message to play.';
@@ -216,6 +234,52 @@ export class AppComponent {
       error: () => {
         this.playingAudio = false;
         this.errorMessage = 'Failed to generate audio for assistant reply.';
+      },
+    });
+  }
+
+  exportCv(format: 'pdf' | 'docx' | 'json'): void {
+    if (!this.sessionId) {
+      this.errorMessage = 'No active session to export.';
+      return;
+    }
+
+    this.loading = true;
+    this.errorMessage = '';
+    this.api.exportCv(this.sessionId, format).subscribe({
+      next: (res: { jobId: string; downloadUrl: string }) => {
+        this.downloadFile(res.downloadUrl, format);
+        this.loading = false;
+      },
+      error: () => {
+        this.errorMessage = `Failed to export CV as ${format.toUpperCase()}.`;
+        this.loading = false;
+      },
+    });
+  }
+
+  private downloadFile(downloadUrl: string, format: string): void {
+    // Extract file ID from the download URL (e.g., /api/download/file-id)
+    const fileId = downloadUrl.split('/').pop();
+    if (!fileId) {
+      this.errorMessage = 'Invalid download URL.';
+      return;
+    }
+
+    this.api.downloadFile(fileId).subscribe({
+      next: (blob: Blob) => {
+        const filename = `resume.${format}`;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      },
+      error: () => {
+        this.errorMessage = `Failed to download ${format.toUpperCase()} file.`;
       },
     });
   }
