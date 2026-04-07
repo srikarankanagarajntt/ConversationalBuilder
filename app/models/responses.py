@@ -39,6 +39,8 @@ class TemplateOption(BaseModel):
     template_id: str
     template_name: str
     description: str
+    template_file_name: str | None = None
+    template_base64: str | None = None
 
 class TemplateOptionsResponse(BaseModel):
     options: list[TemplateOption]

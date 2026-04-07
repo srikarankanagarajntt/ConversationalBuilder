@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     openai_api_key: str = "change-me"
     openai_model: str = "gpt-4.1"
     openai_audio_model: str = "whisper-1"
+    openai_timeout_seconds: float = 8.0
+    openai_max_retries: int = 0
+    openai_ssl_verify: bool = True
+    openai_ca_bundle_path: str | None = None
 
     okta_issuer: str = "https://example.okta.com/oauth2/default"
     okta_audience: str = "api://default"
