@@ -1,7 +1,7 @@
 """Voice endpoints — audio transcription and voice-driven conversation."""
 from __future__ import annotations
 
-from fastapi import APIRouter, File, Form, Response, UploadFile
+from fastapi import APIRouter, Body, File, Form, Response, UploadFile
 
 from app.models.requests import VoiceSpeakRequest
 from app.models.responses import ConversationResponse, TranscribeResponse
@@ -40,7 +40,7 @@ async def voice_message(
 
 @router.post("/voice/speak")
 async def speak_text(
-    body: VoiceSpeakRequest,
+    body: VoiceSpeakRequest = Body(...),
 ):
     """Convert text to speech and return audio bytes."""
     audio_bytes = await speech_service.synthesize(

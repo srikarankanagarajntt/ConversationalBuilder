@@ -15,7 +15,7 @@ export class AppComponent {
   userId = 'dev-user';
   sessionId = '';
   message = '';
-  llmPrompt = 'Give me 2 concise CV summary lines for a Full Stack Developer.';
+  llmPrompt = 'Im a software engineer with 5 years of experience in web development. Summarize my profile for a CV.';
 
   assistantReply = '';
   transcript = '';
@@ -24,6 +24,7 @@ export class AppComponent {
   missingFields: string[] = [];
   loading = false;
   recording = false;
+  playingAudio = false;
 
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
@@ -135,8 +136,8 @@ export class AppComponent {
         this.missingFields = res.missingFields;
         this.loading = false;
 
-        if (this.transcript) {
-          this.speakTranscript(this.transcript);
+        if (this.assistantReply) {
+          this.speakTranscript(this.assistantReply);
         }
       },
       error: () => {
@@ -195,6 +196,26 @@ export class AppComponent {
       error: () => {
         this.errorMessage = 'LLM test call failed.';
         this.loading = false;
+      },
+    });
+  }
+
+  playAssistantReply(): void {
+    if (!this.assistantReply.trim()) {
+      this.errorMessage = 'No assistant message to play.';
+      return;
+    }
+
+    this.playingAudio = true;
+    this.errorMessage = '';
+    this.api.speakText(this.assistantReply).subscribe({
+      next: (audioBlob: Blob) => {
+        this.playAudioBlob(audioBlob);
+        this.playingAudio = false;
+      },
+      error: () => {
+        this.playingAudio = false;
+        this.errorMessage = 'Failed to generate audio for assistant reply.';
       },
     });
   }

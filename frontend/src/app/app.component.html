@@ -1,7 +1,7 @@
 <main class="page">
   <section class="card">
-    <h1>Conversational CV Builder POC</h1>
-    <p>Minimal Angular client for FastAPI + GPT-4.1 integration testing.</p>
+    <h1>Conversational CV Builder</h1>
+    <p>AI-Powered Resume Builder</p>
 
     <div class="row">
       <label>User ID</label>
@@ -9,7 +9,7 @@
       <button (click)="createSession()" [disabled]="loading">Create Session</button>
     </div>
 
-    <p *ngIf="sessionId" class="session">Session: {{ sessionId }}</p>
+    <p *ngIf="sessionId" class="session">Session created for the user {{ userId }}</p>
 
     <div class="row">
       <label>Conversation Message</label>
@@ -30,6 +30,17 @@
           </svg>
           {{ recording ? 'Stop' : 'Audio' }}
         </button>
+        <button
+          class="audio-btn"
+          (click)="playAssistantReply()"
+          [disabled]="!assistantReply || loading || playingAudio"
+          aria-label="Play assistant reply as audio"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+          {{ playingAudio ? 'Playing...' : 'Play' }}
+        </button>
       </div>
     </div>
 
@@ -42,11 +53,11 @@
     <hr />
 
     <div class="row">
-      <label>Direct LLM POC Prompt</label>
+      <label>Enter your role to generate a powerful CV summary.</label>
       <textarea [(ngModel)]="llmPrompt" rows="3"></textarea>
-      <button (click)="testLlm()" [disabled]="loading">Test GPT-4.1</button>
+      <button (click)="testLlm()" [disabled]="loading">Generate Summary</button>
     </div>
 
-    <p *ngIf="llmOutput"><strong>LLM Output:</strong> {{ llmOutput }}</p>
+    <p *ngIf="llmOutput"><strong>Assistant:</strong> {{ llmOutput }}</p>
   </section>
 </main>
