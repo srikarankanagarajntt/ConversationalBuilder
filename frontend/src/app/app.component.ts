@@ -12,7 +12,7 @@ import { ConversationResponse, CvApiService, SessionResponse } from './services/
   styleUrls: ['./app.component.css'],
 })
 export class AppComponent {
-  userId = 'dev-user';
+  userId = '';
   sessionId = '';
   message = '';
   llmPrompt = 'Im a software engineer with 5 years of experience in web development. Summarize my profile for a CV.';
@@ -26,6 +26,9 @@ export class AppComponent {
   recording = false;
   playingAudio = false;
   showSummaryForm = false;
+  showCvPreview = false;
+  pendingExportFormat: 'pdf' | 'docx' | 'json' | null = null;
+  cvData: any = null;
 
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
@@ -60,6 +63,7 @@ export class AppComponent {
         this.assistantReply = res.reply;
         this.transcript = '';
         this.missingFields = res.missingFields;
+        this.cvData = (res as any).cvDraft || null;
         this.message = '';
         this.loading = false;
       },
@@ -135,6 +139,7 @@ export class AppComponent {
         this.transcript = res.transcript ?? '';
         this.assistantReply = res.reply;
         this.missingFields = res.missingFields;
+        this.cvData = (res as any).cvDraft || null;
         this.loading = false;
 
         if (this.assistantReply) {
@@ -244,11 +249,31 @@ export class AppComponent {
       return;
     }
 
+    if (!this.cvData) {
+      this.errorMessage = 'No CV data to export. Continue the conversation to gather information.';
+      return;
+    }
+
+    // Show preview instead of immediate download
+    this.showCvPreview = true;
+    this.pendingExportFormat = format;
+    this.errorMessage = '';
+  }
+
+  downloadCv(): void {
+    if (!this.sessionId || !this.pendingExportFormat) {
+      this.errorMessage = 'Export session lost. Please try again.';
+      return;
+    }
+
+    const format = this.pendingExportFormat;
     this.loading = true;
     this.errorMessage = '';
     this.api.exportCv(this.sessionId, format).subscribe({
       next: (res: { jobId: string; downloadUrl: string }) => {
         this.downloadFile(res.downloadUrl, format);
+        this.showCvPreview = false;
+        this.pendingExportFormat = null;
         this.loading = false;
       },
       error: () => {
@@ -256,6 +281,12 @@ export class AppComponent {
         this.loading = false;
       },
     });
+  }
+
+  closeCvPreview(): void {
+    this.showCvPreview = false;
+    this.pendingExportFormat = null;
+    this.errorMessage = '';
   }
 
   private downloadFile(downloadUrl: string, format: string): void {

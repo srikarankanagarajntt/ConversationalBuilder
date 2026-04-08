@@ -4,8 +4,8 @@
     <p>AI-Powered Resume Builder</p>
 
     <div class="row">
-      <label>User ID</label>
-      <input [(ngModel)]="userId" placeholder="dev-user" />
+      <label>Employee ID</label>
+      <input [(ngModel)]="userId" placeholder="123456" />
       <button (click)="createSession()" [disabled]="loading">Create Session</button>
     </div>
 
@@ -15,7 +15,7 @@
       <label>Conversation Message</label>
       <textarea [(ngModel)]="message" rows="3" placeholder="Say “Hi” — let’s create your CV together"></textarea>
       <div class="actions">
-        <button (click)="sendMessage()" [disabled]="loading || !sessionId">Send Message</button>
+        <button (click)="sendMessage()" [disabled]="loading || !sessionId">Send</button>
         <button
           class="audio-btn"
           (click)="toggleRecording()"
@@ -56,6 +56,98 @@
     </div>
 
     <p *ngIf="errorMessage" class="error">{{ errorMessage }}</p>
+
+    <hr />
+
+    <!-- CV Preview Modal -->
+    <div *ngIf="showCvPreview" class="cv-preview-modal">
+      <div class="preview-overlay" (click)="closeCvPreview()"></div>
+      <div class="preview-container">
+        <div class="preview-header">
+          <h2>CV Preview</h2>
+          <button class="close-btn" (click)="closeCvPreview()">×</button>
+        </div>
+
+        <div class="preview-content">
+          <!-- Personal Info -->
+          <div *ngIf="cvData?.personalInfo" class="preview-section">
+            <h3>{{ cvData.personalInfo.fullName || 'Your Name' }}</h3>
+            <p *ngIf="cvData.personalInfo.email" class="contact-info">📧 {{ cvData.personalInfo.email }}</p>
+            <p *ngIf="cvData.personalInfo.phone" class="contact-info">📱 {{ cvData.personalInfo.phone }}</p>
+            <p *ngIf="cvData.personalInfo.location" class="contact-info">📍 {{ cvData.personalInfo.location }}</p>
+            <p *ngIf="cvData.personalInfo.linkedin" class="contact-info">🔗 {{ cvData.personalInfo.linkedin }}</p>
+            <p *ngIf="cvData.personalInfo.summary" class="summary">{{ cvData.personalInfo.summary }}</p>
+          </div>
+
+          <!-- Skills -->
+          <div *ngIf="cvData?.skills && cvData.skills.length > 0" class="preview-section">
+            <h4>Skills</h4>
+            <div class="skills-list">
+              <span *ngFor="let skill of cvData.skills" class="skill-tag">{{ skill }}</span>
+            </div>
+          </div>
+
+          <!-- Experience -->
+          <div *ngIf="cvData?.experience && cvData.experience.length > 0" class="preview-section">
+            <h4>Experience</h4>
+            <div *ngFor="let exp of cvData.experience" class="experience-item">
+              <div class="job-header">
+                <strong>{{ exp.title }}</strong> at <strong>{{ exp.company }}</strong>
+              </div>
+              <div class="job-dates">{{ exp.startDate }} – {{ exp.endDate }}</div>
+              <ul *ngIf="exp.achievements && exp.achievements.length > 0">
+                <li *ngFor="let achievement of exp.achievements">{{ achievement }}</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Education -->
+          <div *ngIf="cvData?.education && cvData.education.length > 0" class="preview-section">
+            <h4>Education</h4>
+            <div *ngFor="let edu of cvData.education" class="education-item">
+              <div class="degree">{{ edu.degree }} in {{ edu.field }}</div>
+              <div class="institution">{{ edu.institution }}</div>
+              <div class="year">{{ edu.endDate }}</div>
+            </div>
+          </div>
+
+          <!-- Projects -->
+          <div *ngIf="cvData?.projects && cvData.projects.length > 0" class="preview-section">
+            <h4>Projects</h4>
+            <div *ngFor="let project of cvData.projects" class="project-item">
+              <strong>{{ project.name }}</strong>
+              <p>{{ project.description }}</p>
+              <div *ngIf="project.technologies" class="tech-tags">
+                <span *ngFor="let tech of project.technologies" class="tech-tag">{{ tech }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Certifications -->
+          <div *ngIf="cvData?.certifications && cvData.certifications.length > 0" class="preview-section">
+            <h4>Certifications</h4>
+            <div *ngFor="let cert of cvData.certifications" class="cert-item">
+              <strong>{{ cert.name }}</strong> - {{ cert.issuer }} ({{ cert.date }})
+            </div>
+          </div>
+
+          <!-- Languages -->
+          <div *ngIf="cvData?.languages && cvData.languages.length > 0" class="preview-section">
+            <h4>Languages</h4>
+            <div class="languages-list">
+              <span *ngFor="let lang of cvData.languages" class="language-tag">{{ lang }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="preview-actions">
+          <button (click)="closeCvPreview()" class="secondary-btn">Back</button>
+          <button (click)="downloadCv()" [disabled]="loading" class="primary-btn">
+            {{ loading ? 'Downloading...' : 'Download ' + (pendingExportFormat?.toUpperCase() || 'CV') }}
+          </button>
+        </div>
+      </div>
+    </div>
 
     <hr />
 
