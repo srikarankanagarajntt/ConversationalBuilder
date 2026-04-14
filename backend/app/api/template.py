@@ -20,6 +20,12 @@ async def list_templates():
     return TemplateListResponse(templates=templates)
 
 
+@router.get("/template/mock-data")
+async def get_mock_cv_data():
+    """Return mock CV data for testing and preview purposes."""
+    return template_service.get_mock_cv_data()
+
+
 @router.post("/template/select", response_model=SessionResponse)
 async def select_template(
     body: TemplateSelectRequest,

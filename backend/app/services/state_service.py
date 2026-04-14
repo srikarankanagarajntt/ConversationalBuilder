@@ -16,16 +16,16 @@ _store: Dict[str, SessionContext] = {}
 
 
 class StateService:
-    def create_session(self, session_id: str, user_id: Optional[str] = None) -> SessionContext:
-        session = SessionContext(sessionId=session_id, userId=user_id)
-        session.cvDraft.sessionId = session_id
-        _store[session_id] = session
+    def create_session(self, sessionId: str, user_id: Optional[str] = None) -> SessionContext:
+        session = SessionContext(sessionId=sessionId, userId=user_id)
+        session.cvDraft.sessionId = sessionId
+        _store[sessionId] = session
         return session
 
-    def get_session(self, session_id: str) -> SessionContext:
-        session = _store.get(session_id)
+    def get_session(self, sessionId: str) -> SessionContext:
+        session = _store.get(sessionId)
         if session is None:
-            raise SessionNotFoundError(session_id)
+            raise SessionNotFoundError(sessionId)
         return session
 
     def update_cv(self, session_id: str, cv: CvSchema) -> SessionContext:

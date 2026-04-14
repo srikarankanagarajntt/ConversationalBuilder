@@ -21,7 +21,7 @@ llm_service = LLMService()
 
 @router.post("/cv", response_model=UploadCvResponse)
 async def upload_cv(
-    session_id: str = Form(...),
+    sessionId: str = Form(...),
     file: UploadFile = File(...),
 ):
     """Upload a CV file and extract information."""
@@ -79,7 +79,7 @@ async def upload_cv(
         )
 
     # Get session
-    session = state_service.get_session(session_id)
+    session = state_service.get_session(sessionId)
 
     # Map extracted data to canonical CvSchema
     updated_cv = _map_to_cv_schema(session.cvDraft, extracted_data)
@@ -88,12 +88,12 @@ async def upload_cv(
     missing_fields = validation_service.get_missing_fields(updated_cv)
 
     # Update session
-    state_service.update_cv(session_id, updated_cv)
+    state_service.update_cv(sessionId, updated_cv)
 
     return UploadCvResponse(
-        session_id=session_id,
-        extracted_data=extracted_data,
-        missing_fields=missing_fields,
+        sessionId=sessionId,
+        cvDraft=updated_cv,
+        missingFields=missing_fields,
     )
 
 
@@ -129,14 +129,36 @@ def _map_to_cv_schema(base_cv: CvSchema, extracted_data: dict) -> CvSchema:
     for skill in technical_skills.get("secondary", []):
         skills.append(skill.get("skill_name", ""))
 
+    # Normalize technical skills to camelCase
+    normalized_technical_skills = {}
+    for key in ["primary", "secondary"]:
+        if key in technical_skills:
+            normalized_technical_skills[key] = [
+                {
+                    "skillName": skill.get("skill_name", ""),
+                    "proficiency": skill.get("proficiency", "")
+                }
+                for skill in technical_skills[key]
+            ]
+
+    # Normalize work experience to camelCase
+    normalized_work_experience = [
+        {
+            "employer": exp.get("employer", ""),
+            "position": exp.get("position", ""),
+            "projectDescription": exp.get("project_description", "")
+        }
+        for exp in extracted_data.get("workExperience", [])
+    ]
+
     # Update and return CV schema
     base_cv.personalInfo = personal_info
     base_cv.experience = work_experiences
     base_cv.skills = skills
     base_cv.header = header
     base_cv.professionalSummary = extracted_data.get("professionalSummary", [])
-    base_cv.technicalSkills = technical_skills
-    base_cv.workExperience = extracted_data.get("workExperience", [])
+    base_cv.technicalSkills = normalized_technical_skills
+    base_cv.workExperience = normalized_work_experience
 
     return base_cv
 

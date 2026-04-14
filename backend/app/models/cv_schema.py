@@ -1,11 +1,20 @@
 """Canonical CV schema — single source of truth for all flows."""
 from __future__ import annotations
 
-from typing import Dict, List, Optional
-from pydantic import BaseModel, Field
+from typing import Dict, List
+from pydantic import BaseModel, Field, ConfigDict
+from pydantic.alias_generators import to_camel
 
 
-class PersonalInfo(BaseModel):
+class BaseSchemaModel(BaseModel):
+    """Base model with camelCase serialization."""
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+    )
+
+
+class PersonalInfo(BaseSchemaModel):
     fullName: str = ""
     email: str = ""
     phone: str = ""
@@ -14,7 +23,7 @@ class PersonalInfo(BaseModel):
     summary: str = ""
 
 
-class ExperienceEntry(BaseModel):
+class ExperienceEntry(BaseSchemaModel):
     company: str = ""
     title: str = ""
     startDate: str = ""
@@ -22,7 +31,7 @@ class ExperienceEntry(BaseModel):
     achievements: List[str] = Field(default_factory=list)
 
 
-class EducationEntry(BaseModel):
+class EducationEntry(BaseSchemaModel):
     institution: str = ""
     degree: str = ""
     field: str = ""
@@ -30,25 +39,25 @@ class EducationEntry(BaseModel):
     endDate: str = ""
 
 
-class ProjectEntry(BaseModel):
+class ProjectEntry(BaseSchemaModel):
     name: str = ""
     description: str = ""
     technologies: List[str] = Field(default_factory=list)
     url: str = ""
 
 
-class CertificationEntry(BaseModel):
+class CertificationEntry(BaseSchemaModel):
     name: str = ""
     issuer: str = ""
     date: str = ""
 
 
-class TemplateInfo(BaseModel):
+class TemplateInfo(BaseSchemaModel):
     templateId: str = ""
     templateName: str = ""
 
 
-class CvSchema(BaseModel):
+class CvSchema(BaseSchemaModel):
     sessionId: str = ""
     personalInfo: PersonalInfo = Field(default_factory=PersonalInfo)
     skills: List[str] = Field(default_factory=list)
