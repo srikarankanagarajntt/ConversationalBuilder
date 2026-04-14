@@ -16,6 +16,28 @@ export interface ConversationResponse {
   missingFields: string[];
   nextQuestion?: string | null;
   transcript?: string | null;
+  showPersonalInfoModal?: boolean;
+  cvDraft?: any;
+}
+
+export interface TemplateOption {
+  templateId: string;
+  templateName: string;
+  description: string;
+  previewImageUrl: string;
+}
+
+export interface TemplateListResponse {
+  templates: TemplateOption[];
+}
+
+export interface PersonalInfo {
+  fullName: string;
+  email: string;
+  phone: string;
+  location: string;
+  linkedin: string;
+  summary: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -54,6 +76,39 @@ export class CvApiService {
   testLlm(prompt: string): Observable<{ model: string; output: string }> {
     return this.http.post<{ model: string; output: string }>(`${environment.apiBaseUrl}/llm/test`, {
       prompt,
+    });
+  }
+
+  getTemplates(): Observable<TemplateListResponse> {
+    return this.http.get<TemplateListResponse>(`${environment.apiBaseUrl}/template/options`);
+  }
+
+  selectTemplate(sessionId: string, templateId: string): Observable<SessionResponse> {
+    return this.http.post<SessionResponse>(`${environment.apiBaseUrl}/template/select`, {
+      sessionId,
+      templateId,
+    });
+  }
+
+  submitPersonalInfo(
+    sessionId: string,
+    fullName: string,
+    email: string,
+    phone: string,
+    location: string,
+    linkedin: string,
+    summary: string,
+    skills: string[]
+  ): Observable<ConversationResponse> {
+    return this.http.post<ConversationResponse>(`${environment.apiBaseUrl}/conversation/personal-info`, {
+      sessionId,
+      fullName,
+      email,
+      phone,
+      location,
+      linkedin,
+      summary,
+      skills,
     });
   }
 }

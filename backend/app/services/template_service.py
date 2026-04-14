@@ -11,20 +11,14 @@ TEMPLATES: List[TemplateOption] = [
     TemplateOption(
         templateId="ntt-classic",
         templateName="NTT DATA Classic",
-        description="Clean, professional single-column layout aligned with NTT DATA branding.",
+        description="Professional single-column layout for work. Export as PDF.",
         previewImageUrl="/static/templates/ntt-classic.png",
     ),
     TemplateOption(
-        templateId="ntt-modern",
-        templateName="NTT DATA Modern",
-        description="Two-column modern layout with accent colour and skills highlights.",
-        previewImageUrl="/static/templates/ntt-modern.png",
-    ),
-    TemplateOption(
-        templateId="minimal",
-        templateName="Minimal",
-        description="Minimalist white template suitable for all roles.",
-        previewImageUrl="/static/templates/minimal.png",
+        templateId="ntt-one-pager",
+        templateName="NTT DATA One Pager",
+        description="Compact one-page summary format. Export as PPT.",
+        previewImageUrl="/static/templates/ntt-one-pager.png",
     ),
 ]
 

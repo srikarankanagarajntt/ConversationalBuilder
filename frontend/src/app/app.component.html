@@ -259,3 +259,108 @@
     </div>
   </div>
 
+  <!-- Template Selection Modal -->
+  <div *ngIf="showTemplateModal" class="modal-overlay" (click)="closeTemplateModal()">
+    <div class="modal-content template-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Select CV Template</h2>
+        <button class="close-btn" (click)="closeTemplateModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="template-subtitle">Choose a template design for your CV</p>
+        <div class="templates-grid">
+          <div *ngFor="let template of templates" 
+               class="template-preview" 
+               [class.selected]="selectedTemplateId === template.templateId"
+               (click)="selectedTemplateId = template.templateId">
+            <img [src]="template.previewImageUrl" [alt]="template.templateName" class="template-image">
+            <div class="template-info">
+              <h3>{{ template.templateName }}</h3>
+              <p>{{ template.description }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button (click)="closeTemplateModal()" class="btn-secondary">Cancel</button>
+        <button (click)="selectTemplate()" [disabled]="loading || !selectedTemplateId" class="btn-primary">
+          {{ loading ? 'Selecting...' : 'Use Template' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Personal Info Modal -->
+  <div *ngIf="showPersonalInfoModal" class="modal-overlay" (click)="closePersonalInfoModal()">
+    <div class="modal-content personal-info-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Your Information</h2>
+        <button class="close-btn" (click)="closePersonalInfoModal()">×</button>
+      </div>
+      <div class="modal-body personal-info-body">
+        <p class="modal-subtitle">Let's start with your basic information</p>
+        
+        <!-- Personal Details Row 1 -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Full Name *</label>
+            <input [(ngModel)]="personalFullName" type="text" placeholder="John Doe" class="form-input">
+          </div>
+          <div class="form-group">
+            <label>Email *</label>
+            <input [(ngModel)]="personalEmail" type="email" placeholder="john@example.com" class="form-input">
+          </div>
+        </div>
+
+        <!-- Personal Details Row 2 -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Phone</label>
+            <input [(ngModel)]="personalPhone" type="tel" placeholder="+1 (555) 123-4567" class="form-input">
+          </div>
+          <div class="form-group">
+            <label>Location</label>
+            <input [(ngModel)]="personalLocation" type="text" placeholder="New York, USA" class="form-input">
+          </div>
+        </div>
+
+        <!-- LinkedIn -->
+        <div class="form-group">
+          <label>LinkedIn Profile</label>
+          <input [(ngModel)]="personalLinkedin" type="url" placeholder="https://linkedin.com/in/johndoe" class="form-input">
+        </div>
+
+        <!-- Summary -->
+        <div class="form-group">
+          <label>Professional Summary</label>
+          <textarea [(ngModel)]="personalSummary" rows="3" placeholder="Brief overview of your career and goals..." class="form-textarea"></textarea>
+        </div>
+
+        <!-- Skills -->
+        <div class="form-group">
+          <label>Skills</label>
+          <div class="skills-input-container">
+            <input [(ngModel)]="personalSkillsInput" 
+                   (keyup.enter)="addSkill()"
+                   type="text" 
+                   placeholder="Type a skill and press Enter" 
+                   class="form-input">
+            <button (click)="addSkill()" class="btn-add-skill">Add</button>
+          </div>
+          <div class="skills-list-display">
+            <span *ngFor="let skill of personalSkills; let i = index" class="skill-badge">
+              {{ skill }}
+              <button (click)="removeSkill(i)" class="skill-remove">×</button>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button (click)="closePersonalInfoModal()" class="btn-secondary">Cancel</button>
+        <button (click)="submitPersonalInfo()" [disabled]="loading || !personalFullName.trim() || !personalEmail.trim()" class="btn-primary">
+          {{ loading ? 'Saving...' : 'Continue' }}
+        </button>
+      </div>
+    </div>
+  </div>
+

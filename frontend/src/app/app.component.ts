@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import { ConversationResponse, CvApiService, SessionResponse } from './services/cv-api.service';
+import { ConversationResponse, CvApiService, SessionResponse, TemplateOption, PersonalInfo } from './services/cv-api.service';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -34,8 +34,22 @@ export class AppComponent implements OnInit {
   sidebarOpen = false;
   showSummaryForm = false;
   showCvPreview = false;
+  showTemplateModal = false;
+  showPersonalInfoModal = false;
   pendingExportFormat: 'pdf' | 'docx' | 'json' | null = null;
   cvData: any = null;
+  templates: TemplateOption[] = [];
+  selectedTemplateId: string | null = null;
+
+  // Personal info form fields
+  personalFullName = '';
+  personalEmail = '';
+  personalPhone = '';
+  personalLocation = '';
+  personalLinkedin = '';
+  personalSummary = '';
+  personalSkills: string[] = [];
+  personalSkillsInput = '';
 
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
@@ -99,6 +113,12 @@ export class AppComponent implements OnInit {
         this.missingFields = res.missingFields;
         this.cvData = (res as any).cvDraft || null;
         this.message = '';
+        
+        // Show personal info modal if indicated
+        if (res.showPersonalInfoModal) {
+          this.showPersonalInfoModal = true;
+        }
+        
         this.loading = false;
       },
       error: () => {
@@ -323,8 +343,121 @@ export class AppComponent implements OnInit {
   }
 
   showTemplateSelector(): void {
-    this.errorMessage = 'Template selection feature coming soon!';
-    // In future: open template modal
+    if (!this.sessionId) {
+      this.errorMessage = 'Create a session before selecting a template.';
+      return;
+    }
+
+    this.loading = true;
+    this.errorMessage = '';
+    this.api.getTemplates().subscribe({
+      next: (res: any) => {
+        this.templates = res.templates;
+        this.showTemplateModal = true;
+        this.selectedTemplateId = null;
+        this.loading = false;
+      },
+      error: () => {
+        this.errorMessage = 'Failed to load templates.';
+        this.loading = false;
+      },
+    });
+  }
+
+  selectTemplate(): void {
+    if (!this.sessionId || !this.selectedTemplateId) {
+      this.errorMessage = 'Please select a template first.';
+      return;
+    }
+
+    this.loading = true;
+    this.errorMessage = '';
+    this.api.selectTemplate(this.sessionId, this.selectedTemplateId).subscribe({
+      next: () => {
+        this.showTemplateModal = false;
+        this.errorMessage = '';
+        this.loading = false;
+        this.conversationHistory.push({
+          role: 'assistant',
+          content: `Template "${this.selectedTemplateId}" has been selected for your CV.`,
+          timestamp: new Date(),
+        });
+      },
+      error: () => {
+        this.errorMessage = 'Failed to select template.';
+        this.loading = false;
+      },
+    });
+  }
+
+  closeTemplateModal(): void {
+    this.showTemplateModal = false;
+    this.selectedTemplateId = null;
+    this.errorMessage = '';
+  }
+
+  addSkill(): void {
+    if (this.personalSkillsInput.trim()) {
+      this.personalSkills.push(this.personalSkillsInput.trim());
+      this.personalSkillsInput = '';
+    }
+  }
+
+  removeSkill(index: number): void {
+    this.personalSkills.splice(index, 1);
+  }
+
+  submitPersonalInfo(): void {
+    if (!this.sessionId || !this.personalFullName.trim() || !this.personalEmail.trim()) {
+      this.errorMessage = 'Please fill in at least name and email.';
+      return;
+    }
+
+    this.loading = true;
+    this.errorMessage = '';
+    this.api.submitPersonalInfo(
+      this.sessionId,
+      this.personalFullName,
+      this.personalEmail,
+      this.personalPhone,
+      this.personalLocation,
+      this.personalLinkedin,
+      this.personalSummary,
+      this.personalSkills
+    ).subscribe({
+      next: (res: ConversationResponse) => {
+        this.assistantReply = res.reply;
+        this.conversationHistory.push({
+          role: 'assistant',
+          content: this.assistantReply,
+          timestamp: new Date(),
+        });
+        this.missingFields = res.missingFields;
+        this.cvData = (res as any).cvDraft || null;
+        this.showPersonalInfoModal = false;
+        
+        // Clear form
+        this.personalFullName = '';
+        this.personalEmail = '';
+        this.personalPhone = '';
+        this.personalLocation = '';
+        this.personalLinkedin = '';
+        this.personalSummary = '';
+        this.personalSkills = [];
+        this.personalSkillsInput = '';
+        
+        this.loading = false;
+      },
+      error: () => {
+        this.errorMessage = 'Failed to save personal information.';
+        this.loading = false;
+      },
+    });
+  }
+
+  closePersonalInfoModal(): void {
+    this.showPersonalInfoModal = false;
+    this.errorMessage = '';
   }
 
   createNewSession(): void {

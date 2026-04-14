@@ -4,7 +4,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 import uuid
 
-from app.models.requests import CreateSessionRequest, ConversationMessageRequest
+from app.models.requests import CreateSessionRequest, ConversationMessageRequest, PersonalInfoRequest
 from app.models.responses import SessionResponse, ConversationResponse
 from app.services.conversation_service import ConversationService
 from app.services.state_service import StateService
@@ -47,3 +47,20 @@ async def send_message(
 ):
     """Process a user chat message and advance the CV conversation."""
     return await conversation_service.handle_message(body.sessionId, body.message)
+
+
+@router.post("/conversation/personal-info", response_model=ConversationResponse)
+async def submit_personal_info(
+    body: PersonalInfoRequest,
+):
+    """Handle personal info modal submission."""
+    return await conversation_service.handle_personal_info_submission(
+        body.sessionId,
+        body.fullName,
+        body.email,
+        body.phone,
+        body.location,
+        body.linkedin,
+        body.summary,
+        body.skills,
+    )
