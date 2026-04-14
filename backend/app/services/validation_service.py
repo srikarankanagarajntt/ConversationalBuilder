@@ -21,16 +21,30 @@ class ValidationService:
     def get_missing_fields(self, cv: CvSchema) -> List[str]:
         """Return a list of field paths that are empty or missing."""
         missing: List[str] = []
-        pi = cv.personalInfo
-        for field in ("fullName", "email", "phone", "location", "summary"):
-            if not getattr(pi, field, ""):
-                missing.append(f"personalInfo.{field}")
-        if not cv.skills:
-            missing.append("skills")
-        if not cv.experience:
-            missing.append("experience")
-        if not cv.education:
-            missing.append("education")
+
+        # Check header fields
+        if not cv.header.get("fullName"):
+            missing.append("header.fullName")
+        if not cv.header.get("jobTitle"):
+            missing.append("header.jobTitle")
+        if not cv.header.get("email"):
+            missing.append("header.email")
+
+        # Check professional summary
+        if not cv.professionalSummary:
+            missing.append("professionalSummary")
+
+        # Check technical skills
+        if not cv.technicalSkills.get("primary"):
+            missing.append("technicalSkills.primary")
+
+        # Check work experience
+        if not cv.workExperience:
+            missing.append("workExperience")
+
+        # Check declaration.place (assuming it's not present, add if needed)
+        # For now, skip
+
         return missing
 
     def completeness_score(self, cv: CvSchema) -> int:

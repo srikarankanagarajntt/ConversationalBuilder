@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import io
+import re
+from typing import Any, Dict, List
 
 from app.core.exceptions import UnsupportedFileTypeError
 
@@ -45,3 +47,113 @@ class FileParserService:
                 if hasattr(shape, "text") and shape.text.strip():
                     texts.append(shape.text)
         return "\n".join(texts)
+
+    def parse_cv_data(self, text: str) -> Dict[str, Any]:
+        """
+        Parse CV text and extract structured data.
+        """
+        lines = text.split('\n')
+        lines = [line.strip() for line in lines if line.strip()]
+
+        extracted = {
+            "header": self._extract_header(lines),
+            "professionalSummary": self._extract_professional_summary(text),
+            "technicalSkills": self._extract_technical_skills(text),
+            "workExperience": self._extract_work_experience(text)
+        }
+        return extracted
+
+    def _extract_header(self, lines: List[str]) -> Dict[str, str]:
+        header = {"fullName": "", "jobTitle": "", "email": "", "phone": ""}
+
+        # Full name from first line
+        if lines:
+            header["fullName"] = lines[0]
+
+        # Email regex
+        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+        emails = re.findall(email_pattern, '\n'.join(lines))
+        if emails:
+            header["email"] = emails[0]
+
+        # Phone regex (simple pattern)
+        phone_pattern = r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b'
+        phones = re.findall(phone_pattern, '\n'.join(lines))
+        if phones:
+            header["phone"] = phones[0]
+
+        # Job title - look for common patterns
+        title_keywords = ['engineer', 'developer', 'manager', 'analyst', 'architect', 'consultant', 'lead', 'senior', 'junior']
+        for line in lines[:10]:  # Check first 10 lines
+            lower_line = line.lower()
+            if any(keyword in lower_line for keyword in title_keywords):
+                header["jobTitle"] = line
+                break
+
+        return header
+
+    def _extract_professional_summary(self, text: str) -> List[str]:
+        # Look for summary section
+        summary_patterns = [
+            r'Summary\s*\n(.*?)(?=\n[A-Z][a-z]+|\nTechnical|\nExperience|\nWork|\nSkills|\nEducation|\Z)',
+            r'Professional Summary\s*\n(.*?)(?=\n[A-Z][a-z]+|\nTechnical|\nExperience|\nWork|\nSkills|\nEducation|\Z)',
+            r'Objective\s*\n(.*?)(?=\n[A-Z][a-z]+|\nTechnical|\nExperience|\nWork|\nSkills|\nEducation|\Z)'
+        ]
+
+        for pattern in summary_patterns:
+            match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
+            if match:
+                summary_text = match.group(1).strip()
+                # Split into sentences
+                sentences = re.split(r'[.!?]+', summary_text)
+                sentences = [s.strip() for s in sentences if s.strip()]
+                return sentences[:5]  # Limit to 5 sentences
+
+        return []
+
+    def _extract_technical_skills(self, text: str) -> Dict[str, List[Dict[str, str]]]:
+        skills = {"primary": [], "secondary": []}
+
+        # Look for skills section
+        skills_pattern = r'Skills?\s*\n(.*?)(?=\n[A-Z][a-z]+|\nExperience|\nWork|\nEducation|\nProjects|\Z)'
+        match = re.search(skills_pattern, text, re.DOTALL | re.IGNORECASE)
+        if match:
+            skills_text = match.group(1).strip()
+            # Split by common delimiters
+            skill_items = re.split(r'[,;•\-\n]', skills_text)
+            skill_items = [s.strip() for s in skill_items if s.strip()]
+
+            # Categorize - first few as primary
+            primary_count = min(5, len(skill_items) // 2 + 1)
+            for i, skill in enumerate(skill_items):
+                skill_dict = {"skill_name": skill, "proficiency": "advanced" if i < primary_count else "intermediate"}
+                if i < primary_count:
+                    skills["primary"].append(skill_dict)
+                else:
+                    skills["secondary"].append(skill_dict)
+
+        return skills
+
+    def _extract_work_experience(self, text: str) -> List[Dict[str, str]]:
+        experiences = []
+
+        # Look for experience section
+        exp_pattern = r'(?:Work )?Experience\s*\n(.*?)(?=\n[A-Z][a-z]+|\nEducation|\nProjects|\nSkills|\Z)'
+        match = re.search(exp_pattern, text, re.DOTALL | re.IGNORECASE)
+        if match:
+            exp_text = match.group(1).strip()
+            # Split into entries (rough heuristic)
+            entries = re.split(r'\n(?=[A-Z][a-zA-Z\s]+(?:\n|\s*[-–]\s*))', exp_text)
+            for entry in entries[:3]:  # Limit to 3
+                lines = entry.strip().split('\n')
+                if lines:
+                    employer = lines[0].strip()
+                    position = lines[1].strip() if len(lines) > 1 else ""
+                    description = ' '.join(lines[2:]) if len(lines) > 2 else ""
+                    experiences.append({
+                        "employer": employer,
+                        "position": position,
+                        "project_description": description
+                    })
+
+        return experiences

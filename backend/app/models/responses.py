@@ -71,3 +71,9 @@ class ErrorResponse(BaseModel):
     message: str
     traceId: str
     details: List[ErrorDetail] = []
+
+
+class UploadCvResponse(BaseModel):
+    session_id: str
+    extracted_data: Dict[str, Any]
+    missing_fields: List[str] = []

@@ -1,7 +1,7 @@
 """Canonical CV schema — single source of truth for all flows."""
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
 
@@ -58,3 +58,8 @@ class CvSchema(BaseModel):
     certifications: List[CertificationEntry] = Field(default_factory=list)
     languages: List[str] = Field(default_factory=list)
     template: TemplateInfo = Field(default_factory=TemplateInfo)
+    # Additional fields from upload extraction
+    header: Dict[str, str] = Field(default_factory=dict)
+    professionalSummary: List[str] = Field(default_factory=list)
+    technicalSkills: Dict[str, List[Dict[str, str]]] = Field(default_factory=dict)
+    workExperience: List[Dict[str, str]] = Field(default_factory=list)
