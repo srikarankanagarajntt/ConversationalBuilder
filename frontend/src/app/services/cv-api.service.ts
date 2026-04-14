@@ -40,10 +40,6 @@ export class CvApiService {
     return this.http.post<ConversationResponse>(`${environment.apiBaseUrl}/voice/message`, form);
   }
 
-  speakText(text: string, voice?: string, format = 'mp3'): Observable<Blob> {
-    return this.http.post(`${environment.apiBaseUrl}/voice/speak`, { text, voice, format }, { responseType: 'blob' });
-  }
-
   exportCv(sessionId: string, format: 'pdf' | 'docx' | 'json'): Observable<{ jobId: string; downloadUrl: string }> {
     return this.http.post<{ jobId: string; downloadUrl: string }>(`${environment.apiBaseUrl}/export`, {
       sessionId,

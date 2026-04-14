@@ -32,17 +32,6 @@ class WhisperAdapter:
         )
         return transcript.text
 
-    async def synthesize(self, text: str, voice: str | None = None, audio_format: str | None = None) -> bytes:
-        speech_response = await self._client.audio.speech.create(
-            model=settings.tts_model,
-            voice=voice or settings.tts_voice,
-            input=text,
-            response_format=audio_format or settings.tts_format,
-        )
-
-        if hasattr(speech_response, "content") and isinstance(speech_response.content, (bytes, bytearray)):
-            return bytes(speech_response.content)
-
         if hasattr(speech_response, "read"):
             data = speech_response.read()
             if inspect.isawaitable(data):

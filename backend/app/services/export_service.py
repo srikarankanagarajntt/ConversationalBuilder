@@ -19,7 +19,7 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
 class ExportService:
-    async def create_export_job(self, cv: CvSchema, fmt: str) -> Dict[str, Any]:
+    async def create_export_job(self, cv: CvSchema, fmt: str, template_id: str = "ntt-classic") -> Dict[str, Any]:
         """Generate the file synchronously (POC) and store the job record."""
         job_id = str(uuid.uuid4())
         file_id = str(uuid.uuid4())
@@ -29,7 +29,7 @@ class ExportService:
             media_type = "application/json"
             filename = "cv.json"
         elif fmt == "docx":
-            file_path = self._export_docx(cv, file_id)
+            file_path = self._export_docx(cv, file_id, template_id)
             media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             filename = "cv.docx"
         elif fmt == "pdf":
@@ -73,31 +73,11 @@ class ExportService:
             json.dump(cv.model_dump(), f, indent=2)
         return path
 
-    def _export_docx(self, cv: CvSchema, file_id: str) -> str:
-        from docx import Document
+    def _export_docx(self, cv: CvSchema, file_id: str, template_id: str = "ntt-classic") -> str:
+        from app.services.template_processor import TemplateProcessor
 
-        doc = Document()
-        doc.add_heading(cv.personalInfo.fullName or "Curriculum Vitae", 0)
-        doc.add_paragraph(cv.personalInfo.email)
-        doc.add_paragraph(cv.personalInfo.phone)
-        doc.add_paragraph(cv.personalInfo.summary)
-
-        if cv.experience:
-            doc.add_heading("Experience", level=1)
-            for exp in cv.experience:
-                doc.add_heading(f"{exp.title} — {exp.company}", level=2)
-                doc.add_paragraph(f"{exp.startDate} – {exp.endDate}")
-                for ach in exp.achievements:
-                    doc.add_paragraph(f"• {ach}")
-
-        if cv.education:
-            doc.add_heading("Education", level=1)
-            for edu in cv.education:
-                doc.add_paragraph(f"{edu.degree}, {edu.institution} ({edu.endDate})")
-
-        if cv.skills:
-            doc.add_heading("Skills", level=1)
-            doc.add_paragraph(", ".join(cv.skills))
+        processor = TemplateProcessor()
+        doc = processor.process_template(cv, template_id)
 
         path = os.path.join(OUTPUT_DIR, f"{file_id}.docx")
         doc.save(path)

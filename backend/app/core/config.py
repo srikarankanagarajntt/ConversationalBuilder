@@ -17,14 +17,9 @@ class Settings(BaseSettings):
     # Whisper
     whisper_model: str = "whisper-1"
 
-    # Text-to-speech
-    tts_model: str = "gpt-4o-mini-tts"
-    tts_voice: str = "alloy"
-    tts_format: str = "mp3"
-
     # App
     app_env: str = "development"
-    app_port: int = 8000
+    app_port: int = 8001
 
     # CORS — stored as comma-separated string, exposed as list
     allowed_origins: str = "http://localhost:4200"

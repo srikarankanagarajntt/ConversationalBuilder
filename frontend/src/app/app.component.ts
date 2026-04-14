@@ -1,8 +1,14 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { ConversationResponse, CvApiService, SessionResponse } from './services/cv-api.service';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
 
 @Component({
   selector: 'app-root',
@@ -11,12 +17,13 @@ import { ConversationResponse, CvApiService, SessionResponse } from './services/
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
 })
-export class AppComponent {
-  userId = '';
+export class AppComponent implements OnInit {
+  userId = 'user-' + Math.random().toString(36).substr(2, 9);
   sessionId = '';
   message = '';
   llmPrompt = 'Im a software engineer with 5 years of experience in web development. Summarize my profile for a CV.';
 
+  conversationHistory: Message[] = [];
   assistantReply = '';
   transcript = '';
   llmOutput = '';
@@ -24,7 +31,7 @@ export class AppComponent {
   missingFields: string[] = [];
   loading = false;
   recording = false;
-  playingAudio = false;
+  sidebarOpen = false;
   showSummaryForm = false;
   showCvPreview = false;
   pendingExportFormat: 'pdf' | 'docx' | 'json' | null = null;
@@ -32,20 +39,33 @@ export class AppComponent {
 
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
-  private currentAudioUrl: string | null = null;
 
   constructor(private readonly api: CvApiService) {}
 
-  createSession(): void {
+  ngOnInit(): void {
+    this.createSessionOnLoad();
+  }
+
+  hasAssistantMessages(): boolean {
+    return this.conversationHistory.some(m => m.role === 'assistant');
+  }
+
+  private createSessionOnLoad(): void {
     this.loading = true;
     this.errorMessage = '';
     this.api.createSession(this.userId).subscribe({
       next: (res: SessionResponse) => {
         this.sessionId = res.sessionId;
         this.loading = false;
+        // Add an initial greeting to conversation
+        this.conversationHistory.push({
+          role: 'assistant',
+          content: "Hello! I'm your AI CV Assistant. Let's build your professional CV together. Tell me about yourself, your experience, skills, or what role you're applying for.",
+          timestamp: new Date(),
+        });
       },
       error: () => {
-        this.errorMessage = 'Failed to create session.';
+        this.errorMessage = 'Failed to create session. Please refresh the page.';
         this.loading = false;
       },
     });
@@ -56,11 +76,25 @@ export class AppComponent {
       return;
     }
 
+    const userMessage = this.message.trim();
+    // Add user message to conversation
+    this.conversationHistory.push({
+      role: 'user',
+      content: userMessage,
+      timestamp: new Date(),
+    });
+
     this.loading = true;
     this.errorMessage = '';
-    this.api.sendMessage(this.sessionId, this.message).subscribe({
+    this.api.sendMessage(this.sessionId, userMessage).subscribe({
       next: (res: ConversationResponse) => {
         this.assistantReply = res.reply;
+        // Add assistant reply to conversation
+        this.conversationHistory.push({
+          role: 'assistant',
+          content: this.assistantReply,
+          timestamp: new Date(),
+        });
         this.transcript = '';
         this.missingFields = res.missingFields;
         this.cvData = (res as any).cvDraft || null;
@@ -138,52 +172,27 @@ export class AppComponent {
       next: (res: ConversationResponse) => {
         this.transcript = res.transcript ?? '';
         this.assistantReply = res.reply;
+        
+        // Add voice message and reply to conversation
+        this.conversationHistory.push({
+          role: 'user',
+          content: this.transcript,
+          timestamp: new Date(),
+        });
+        this.conversationHistory.push({
+          role: 'assistant',
+          content: this.assistantReply,
+          timestamp: new Date(),
+        });
+
         this.missingFields = res.missingFields;
         this.cvData = (res as any).cvDraft || null;
         this.loading = false;
-
-        if (this.assistantReply) {
-          this.speakTranscript(this.assistantReply);
-        }
       },
       error: () => {
         this.errorMessage = 'Failed to process voice message.';
         this.loading = false;
       },
-    });
-  }
-
-  private speakTranscript(text: string): void {
-    this.api.speakText(text).subscribe({
-      next: (audioBlob: Blob) => {
-        this.playAudioBlob(audioBlob);
-      },
-      error: () => {
-        // Keep conversation flow successful even if TTS fails.
-        this.errorMessage = 'Transcript available, but audio playback generation failed.';
-      },
-    });
-  }
-
-  private playAudioBlob(audioBlob: Blob): void {
-    if (this.currentAudioUrl) {
-      URL.revokeObjectURL(this.currentAudioUrl);
-      this.currentAudioUrl = null;
-    }
-
-    const audioUrl = URL.createObjectURL(audioBlob);
-    this.currentAudioUrl = audioUrl;
-    const audio = new Audio(audioUrl);
-
-    audio.onended = () => {
-      if (this.currentAudioUrl) {
-        URL.revokeObjectURL(this.currentAudioUrl);
-        this.currentAudioUrl = null;
-      }
-    };
-
-    audio.play().catch(() => {
-      this.errorMessage = 'Transcript audio is ready but browser blocked auto-play. Interact and retry.';
     });
   }
 
@@ -228,19 +237,6 @@ export class AppComponent {
       this.errorMessage = 'No assistant message to play.';
       return;
     }
-
-    this.playingAudio = true;
-    this.errorMessage = '';
-    this.api.speakText(this.assistantReply).subscribe({
-      next: (audioBlob: Blob) => {
-        this.playAudioBlob(audioBlob);
-        this.playingAudio = false;
-      },
-      error: () => {
-        this.playingAudio = false;
-        this.errorMessage = 'Failed to generate audio for assistant reply.';
-      },
-    });
   }
 
   exportCv(format: 'pdf' | 'docx' | 'json'): void {
@@ -313,5 +309,33 @@ export class AppComponent {
         this.errorMessage = `Failed to download ${format.toUpperCase()} file.`;
       },
     });
+  }
+
+  toggleSidebar(): void {
+    this.sidebarOpen = !this.sidebarOpen;
+  }
+
+  onFileUpload(event: any): void {
+    const file = event.target.files?.[0];
+    if (file) {
+      this.errorMessage = `File "${file.name}" selected. Feature to process file will be added soon.`;
+    }
+  }
+
+  showTemplateSelector(): void {
+    this.errorMessage = 'Template selection feature coming soon!';
+    // In future: open template modal
+  }
+
+  createNewSession(): void {
+    this.sessionId = '';
+    this.message = '';
+    this.conversationHistory = [];
+    this.transcript = '';
+    this.assistantReply = '';
+    this.errorMessage = '';
+    this.cvData = null;
+    this.sidebarOpen = false;
+    this.createSessionOnLoad();
   }
 }

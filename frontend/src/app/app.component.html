@@ -1,179 +1,261 @@
-<main class="page">
-  <section class="card">
-    <h1>Conversational CV Builder</h1>
-    <p>AI-Powered Resume Builder</p>
-
-    <div class="row">
-      <label>Employee ID</label>
-      <input [(ngModel)]="userId" placeholder="123456" />
-      <button (click)="createSession()" [disabled]="loading">Create Session</button>
-    </div>
-
-    <p *ngIf="sessionId" class="session">Session created for the user {{ userId }}</p>
-
-    <div class="row">
-      <label>Conversation Message</label>
-      <textarea [(ngModel)]="message" rows="3" placeholder="Say “Hi” — let’s create your CV together"></textarea>
-      <div class="actions">
-        <button (click)="sendMessage()" [disabled]="loading || !sessionId">Send</button>
-        <button
-          class="audio-btn"
-          (click)="toggleRecording()"
-          [disabled]="loading || !sessionId"
-          [class.recording]="recording"
-          aria-label="Record voice message"
-        >
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-            <path
-              d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a1 1 0 1 0-2 0 3 3 0 1 1-6 0 1 1 0 1 0-2 0 5 5 0 0 0 4 4.9V20H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.1A5 5 0 0 0 17 12Z"
-            />
-          </svg>
-          {{ recording ? 'Stop' : 'Audio' }}
-        </button>
-        <button
-          class="audio-btn"
-          (click)="playAssistantReply()"
-          [disabled]="!assistantReply || loading || playingAudio"
-          aria-label="Play assistant reply as audio"
-        >
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-            <path d="M8 5v14l11-7z" />
-          </svg>
-          {{ playingAudio ? 'Playing...' : 'Play' }}
-        </button>
-      </div>
-    </div>
-
-    <p *ngIf="transcript"><strong>Transcript:</strong> {{ transcript }}</p>
-
-    <p *ngIf="assistantReply"><strong>Assistant:</strong> {{ assistantReply }}</p>
-
-    <div *ngIf="missingFields.length" class="warning-box">
-      <strong>⚠️ Missing Information:</strong>
-      <ul>
-        <li *ngFor="let field of missingFields">{{ formatFieldName(field) }}</li>
-      </ul>
-    </div>
-
-    <p *ngIf="errorMessage" class="error">{{ errorMessage }}</p>
-
-    <hr />
-
-    <!-- CV Preview Modal -->
-    <div *ngIf="showCvPreview" class="cv-preview-modal">
-      <div class="preview-overlay" (click)="closeCvPreview()"></div>
-      <div class="preview-container">
-        <div class="preview-header">
-          <h2>CV Preview</h2>
-          <button class="close-btn" (click)="closeCvPreview()">×</button>
-        </div>
-
-        <div class="preview-content">
-          <!-- Personal Info -->
-          <div *ngIf="cvData?.personalInfo" class="preview-section">
-            <h3>{{ cvData.personalInfo.fullName || 'Your Name' }}</h3>
-            <p *ngIf="cvData.personalInfo.email" class="contact-info">📧 {{ cvData.personalInfo.email }}</p>
-            <p *ngIf="cvData.personalInfo.phone" class="contact-info">📱 {{ cvData.personalInfo.phone }}</p>
-            <p *ngIf="cvData.personalInfo.location" class="contact-info">📍 {{ cvData.personalInfo.location }}</p>
-            <p *ngIf="cvData.personalInfo.linkedin" class="contact-info">🔗 {{ cvData.personalInfo.linkedin }}</p>
-            <p *ngIf="cvData.personalInfo.summary" class="summary">{{ cvData.personalInfo.summary }}</p>
-          </div>
-
-          <!-- Skills -->
-          <div *ngIf="cvData?.skills && cvData.skills.length > 0" class="preview-section">
-            <h4>Skills</h4>
-            <div class="skills-list">
-              <span *ngFor="let skill of cvData.skills" class="skill-tag">{{ skill }}</span>
-            </div>
-          </div>
-
-          <!-- Experience -->
-          <div *ngIf="cvData?.experience && cvData.experience.length > 0" class="preview-section">
-            <h4>Experience</h4>
-            <div *ngFor="let exp of cvData.experience" class="experience-item">
-              <div class="job-header">
-                <strong>{{ exp.title }}</strong> at <strong>{{ exp.company }}</strong>
-              </div>
-              <div class="job-dates">{{ exp.startDate }} – {{ exp.endDate }}</div>
-              <ul *ngIf="exp.achievements && exp.achievements.length > 0">
-                <li *ngFor="let achievement of exp.achievements">{{ achievement }}</li>
-              </ul>
-            </div>
-          </div>
-
-          <!-- Education -->
-          <div *ngIf="cvData?.education && cvData.education.length > 0" class="preview-section">
-            <h4>Education</h4>
-            <div *ngFor="let edu of cvData.education" class="education-item">
-              <div class="degree">{{ edu.degree }} in {{ edu.field }}</div>
-              <div class="institution">{{ edu.institution }}</div>
-              <div class="year">{{ edu.endDate }}</div>
-            </div>
-          </div>
-
-          <!-- Projects -->
-          <div *ngIf="cvData?.projects && cvData.projects.length > 0" class="preview-section">
-            <h4>Projects</h4>
-            <div *ngFor="let project of cvData.projects" class="project-item">
-              <strong>{{ project.name }}</strong>
-              <p>{{ project.description }}</p>
-              <div *ngIf="project.technologies" class="tech-tags">
-                <span *ngFor="let tech of project.technologies" class="tech-tag">{{ tech }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Certifications -->
-          <div *ngIf="cvData?.certifications && cvData.certifications.length > 0" class="preview-section">
-            <h4>Certifications</h4>
-            <div *ngFor="let cert of cvData.certifications" class="cert-item">
-              <strong>{{ cert.name }}</strong> - {{ cert.issuer }} ({{ cert.date }})
-            </div>
-          </div>
-
-          <!-- Languages -->
-          <div *ngIf="cvData?.languages && cvData.languages.length > 0" class="preview-section">
-            <h4>Languages</h4>
-            <div class="languages-list">
-              <span *ngFor="let lang of cvData.languages" class="language-tag">{{ lang }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="preview-actions">
-          <button (click)="closeCvPreview()" class="secondary-btn">Back</button>
-          <button (click)="downloadCv()" [disabled]="loading" class="primary-btn">
-            {{ loading ? 'Downloading...' : 'Download ' + (pendingExportFormat?.toUpperCase() || 'CV') }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <hr />
-
-    <div class="row">
-      <label>Export CV</label>
-      <div class="actions">
-        <button (click)="exportCv('pdf')" [disabled]="loading || !sessionId">Export as PDF</button>
-        <button (click)="exportCv('docx')" [disabled]="loading || !sessionId">Export as DOCX</button>
-        <button (click)="exportCv('json')" [disabled]="loading || !sessionId">Export as JSON</button>
-      </div>
-    </div>
-
-    <div class="row">
-      <button (click)="toggleSummaryForm()" [disabled]="loading">
-        {{ showSummaryForm ? 'Hide Summary Form' : 'Generate Summary' }}
+<div class="app-wrapper">
+  <!-- Left Sidebar (ChatGPT-like) -->
+  <nav class="sidebar" [class.open]="sidebarOpen">
+    <div class="sidebar-header">
+      <h2>CV Builder</h2>
+      <button class="close-sidebar-btn" (click)="toggleSidebar()" *ngIf="sidebarOpen">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+        </svg>
       </button>
     </div>
 
-    <div *ngIf="showSummaryForm" class="row">
-      <label>Enter your role to generate a powerful CV summary.</label>
-      <textarea [(ngModel)]="llmPrompt" rows="3"></textarea>
-      <div class="actions">
-        <button (click)="testLlm()" [disabled]="loading || !llmPrompt.trim()">Send</button>
+    <div class="sidebar-content">
+      <!-- New Chat Button -->
+      <button class="sidebar-btn new-chat-btn" (click)="createNewSession()">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+          <path d="M12 5v14m7-7H5" stroke="currentColor" stroke-width="2" fill="none"/>
+        </svg>
+        New Chat
+      </button>
+
+      <div class="sidebar-section">
+        <label class="sidebar-section-label">Upload Options</label>
+        
+        <!-- File Upload -->
+        <label class="sidebar-btn file-upload-btn">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
+          <span>Upload Resume</span>
+          <input type="file" accept=".pdf,.docx,.txt" (change)="onFileUpload($event)" hidden>
+        </label>
+
+        <!-- Template Selection -->
+        <button class="sidebar-btn template-btn" (click)="showTemplateSelector()">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54h2.86v2h-4v-4h2v2.41l2.75-3.54h-3.01v-2h4v3.59z"/>
+          </svg>
+          <span>Select Template</span>
+        </button>
+      </div>
+
+      <div class="sidebar-section">
+        <label class="sidebar-section-label">Export Options</label>
+        
+        <button class="sidebar-btn export-link-btn" (click)="exportCv('pdf')" [disabled]="loading || !sessionId">
+          <span>📄</span> PDF
+        </button>
+        <button class="sidebar-btn export-link-btn" (click)="exportCv('docx')" [disabled]="loading || !sessionId">
+          <span>📝</span> DOCX
+        </button>
+        <button class="sidebar-btn export-link-btn" (click)="exportCv('json')" [disabled]="loading || !sessionId">
+          <span>⚙️</span> JSON
+        </button>
       </div>
     </div>
+  </nav>
 
-    <p *ngIf="llmOutput"><strong>Generated Summary:</strong> {{ llmOutput }}</p>
-  </section>
-</main>
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header with Hamburger Menu -->
+    <header class="chat-header">
+      <button class="hamburger-btn" (click)="toggleSidebar()">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+          <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+        </svg>
+      </button>
+      <div class="header-content">
+        <h1>CV Builder AI</h1>
+        <p>Build your professional CV with AI assistance</p>
+      </div>
+      <div class="header-actions">
+        <button (click)="toggleSummaryForm()" [disabled]="loading || !sessionId" class="icon-btn" title="Generate Summary">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Chat Area -->
+    <div class="chat-main">
+      <!-- Conversation History -->
+      <div class="conversation-area">
+        <div class="messages-container" id="messagesContainer">
+          <div *ngFor="let msg of conversationHistory" [ngClass]="'message ' + msg.role">
+            <div class="message-bubble">
+              <span *ngIf="msg.role === 'user'" class="user-avatar">You</span>
+              <span *ngIf="msg.role === 'assistant'" class="assistant-avatar">AI</span>
+              <div class="message-content">{{ msg.content }}</div>
+            </div>
+          </div>
+
+          <!-- Loading indicator -->
+          <div *ngIf="loading" class="message assistant">
+            <div class="message-bubble">
+              <span class="assistant-avatar">AI</span>
+              <div class="message-content loading-dots">
+                <span></span><span></span><span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input Area -->
+      <div class="input-area">
+        <div class="input-wrapper">
+          <textarea
+            [(ngModel)]="message"
+            placeholder="Tell me about your experience, skills, or the job you're applying for..."
+            rows="1"
+            class="message-input"
+            (keyup.enter)="sendMessage()"
+          ></textarea>
+          <div class="input-buttons">
+            <button
+              class="voice-btn"
+              (click)="toggleRecording()"
+              [disabled]="loading"
+              [class.recording]="recording"
+              title="Record voice message"
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a1 1 0 1 0-2 0 3 3 0 1 1-6 0 1 1 0 1 0-2 0 5 5 0 0 0 4 4.9V20H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.1A5 5 0 0 0 17 12Z" />
+              </svg>
+            </button>
+            <button
+              class="send-btn"
+              (click)="sendMessage()"
+              [disabled]="loading || !message.trim()"
+              title="Send message"
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                <path d="M16.6915026,12.4744748 L3.50612381,13.2599618 C3.19218622,13.2599618 3.03521743,13.4170592 3.03521743,13.5741566 L1.15159189,20.0151496 C0.8376543,20.8006365 0.99,21.89 1.77946707,22.52 C2.41,22.99 3.50612381,23.1 4.13399899,22.8429026 L21.714504,14.0454487 C22.6563168,13.5741566 23.1272231,12.6315722 22.9702544,11.6889879 C22.9702544,11.6889879 22.9702544,11.5318905 22.9702544,11.4744748 L22.9702544,11.3173773 C22.9702544,10.3747931 22.6563168,9.43220865 21.714504,8.96091653 L4.13399899,0.163462553 C3.34915502,-0.163462553 2.40734225,0.110738028 1.77946707,0.640928270 C0.994623095,1.16111851 0.837654326,2.25051972 1.15159189,3.0359067 L3.03521743,9.47690177 C3.03521743,9.63400504 3.19218622,9.79110831 3.50612381,9.79110831 L16.6915026,10.5765952 C16.6915026,10.5765952 17.1624089,10.5765952 17.1624089,10.0579505 L17.1624089,11.1473517 C17.1624089,11.0899359 16.6915026,10.2443859 16.6915026,9.90361088 L16.6915026,12.4744748 Z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Sidebar Overlay (for mobile) -->
+  <div class="sidebar-overlay" *ngIf="sidebarOpen" (click)="toggleSidebar()"></div>
+</div>
+
+  <!-- Summary Form Modal -->
+  <div *ngIf="showSummaryForm" class="modal-overlay" (click)="toggleSummaryForm()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Generate CV Summary</h2>
+        <button class="close-btn" (click)="toggleSummaryForm()">×</button>
+      </div>
+      <div class="modal-body">
+        <label>Enter your role to generate a powerful CV summary:</label>
+        <textarea [(ngModel)]="llmPrompt" rows="4" class="form-textarea"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button (click)="toggleSummaryForm()" class="btn-secondary">Cancel</button>
+        <button (click)="testLlm()" [disabled]="loading || !llmPrompt.trim()" class="btn-primary">
+          {{ loading ? 'Generating...' : 'Generate' }}
+        </button>
+      </div>
+      <div *ngIf="llmOutput" class="generated-output">
+        <strong>Generated Summary:</strong>
+        <p>{{ llmOutput }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CV Preview Modal -->
+  <div *ngIf="showCvPreview" class="cv-preview-modal">
+    <div class="preview-overlay" (click)="closeCvPreview()"></div>
+    <div class="preview-container">
+      <div class="preview-header">
+        <h2>CV Preview</h2>
+        <button class="close-btn" (click)="closeCvPreview()">×</button>
+      </div>
+
+      <div class="preview-content">
+        <!-- Personal Info -->
+        <div *ngIf="cvData?.personalInfo" class="preview-section">
+          <h3>{{ cvData.personalInfo.fullName || 'Your Name' }}</h3>
+          <p *ngIf="cvData.personalInfo.email" class="contact-info">📧 {{ cvData.personalInfo.email }}</p>
+          <p *ngIf="cvData.personalInfo.phone" class="contact-info">📱 {{ cvData.personalInfo.phone }}</p>
+          <p *ngIf="cvData.personalInfo.location" class="contact-info">📍 {{ cvData.personalInfo.location }}</p>
+          <p *ngIf="cvData.personalInfo.linkedin" class="contact-info">🔗 {{ cvData.personalInfo.linkedin }}</p>
+          <p *ngIf="cvData.personalInfo.summary" class="summary">{{ cvData.personalInfo.summary }}</p>
+        </div>
+
+        <!-- Skills -->
+        <div *ngIf="cvData?.skills && cvData.skills.length > 0" class="preview-section">
+          <h4>Skills</h4>
+          <div class="skills-list">
+            <span *ngFor="let skill of cvData.skills" class="skill-tag">{{ skill }}</span>
+          </div>
+        </div>
+
+        <!-- Experience -->
+        <div *ngIf="cvData?.experience && cvData.experience.length > 0" class="preview-section">
+          <h4>Experience</h4>
+          <div *ngFor="let exp of cvData.experience" class="experience-item">
+            <div class="job-header">
+              <strong>{{ exp.title }}</strong> at <strong>{{ exp.company }}</strong>
+            </div>
+            <div class="job-dates">{{ exp.startDate }} – {{ exp.endDate }}</div>
+            <ul *ngIf="exp.achievements && exp.achievements.length > 0">
+              <li *ngFor="let achievement of exp.achievements">{{ achievement }}</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Eduaction -->
+        <div *ngIf="cvData?.education && cvData.education.length > 0" class="preview-section">
+          <h4>Education</h4>
+          <div *ngFor="let edu of cvData.education" class="education-item">
+            <div class="degree">{{ edu.degree }} in {{ edu.field }}</div>
+            <div class="institution">{{ edu.institution }}</div>
+            <div class="year">{{ edu.endDate }}</div>
+          </div>
+        </div>
+
+        <!-- Projects -->
+        <div *ngIf="cvData?.projects && cvData.projects.length > 0" class="preview-section">
+          <h4>Projects</h4>
+          <div *ngFor="let project of cvData.projects" class="project-item">
+            <strong>{{ project.name }}</strong>
+            <p>{{ project.description }}</p>
+            <div *ngIf="project.technologies" class="tech-tags">
+              <span *ngFor="let tech of project.technologies" class="tech-tag">{{ tech }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Certifications -->
+        <div *ngIf="cvData?.certifications && cvData.certifications.length > 0" class="preview-section">
+          <h4>Certifications</h4>
+          <div *ngFor="let cert of cvData.certifications" class="cert-item">
+            <strong>{{ cert.name }}</strong> - {{ cert.issuer }} ({{ cert.date }})
+          </div>
+        </div>
+
+        <!-- Languages -->
+        <div *ngIf="cvData?.languages && cvData.languages.length > 0" class="preview-section">
+          <h4>Languages</h4>
+          <div class="languages-list">
+            <span *ngFor="let lang of cvData.languages" class="language-tag">{{ lang }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-actions">
+        <button (click)="closeCvPreview()" class="btn-secondary">Back</button>
+        <button (click)="downloadCv()" [disabled]="loading" class="btn-primary">
+          {{ loading ? 'Downloading...' : 'Download ' + (pendingExportFormat?.toUpperCase() || 'CV') }}
+        </button>
+      </div>
+    </div>
+  </div>
+

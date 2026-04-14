@@ -27,9 +27,4 @@ class PreviewEditRequest(BaseModel):
 class ExportRequest(BaseModel):
     sessionId: str
     format: str = Field("pdf", pattern="^(pdf|docx|json)$")
-
-
-class VoiceSpeakRequest(BaseModel):
-    text: str = Field(..., min_length=1, max_length=4000)
-    voice: Optional[str] = None
-    format: str = Field("mp3", pattern="^(mp3|wav|opus)$")
+    templateId: str = Field("ntt-classic", description="Template ID for DOCX export")
