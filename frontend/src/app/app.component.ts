@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClientModule, HttpClient } from '@angular/common/http';
 
 import { ConversationResponse, CvApiService, SessionResponse, TemplateOption, PersonalInfo } from './services/cv-api.service';
+import { environment } from '../environments/environment';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -13,7 +15,7 @@ interface Message {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, HttpClientModule],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
 })
@@ -54,7 +56,7 @@ export class AppComponent implements OnInit {
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
 
-  constructor(private readonly api: CvApiService) {}
+  constructor(private readonly api: CvApiService, private readonly http: HttpClient) {}
 
   ngOnInit(): void {
     this.createSessionOnLoad();
@@ -335,12 +337,194 @@ export class AppComponent implements OnInit {
     this.sidebarOpen = !this.sidebarOpen;
   }
 
-  onFileUpload(event: any): void {
-    const file = event.target.files?.[0];
-    if (file) {
-      this.errorMessage = `File "${file.name}" selected. Feature to process file will be added soon.`;
+  onFileUpload(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = input.files;
+
+    if (!files || files.length === 0) {
+      return;
     }
+
+    const file = files[0];
+    
+    // Validate file type
+    const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+    if (!allowedTypes.includes(file.type)) {
+      this.errorMessage = 'Invalid file type. Please upload PDF, DOCX, or TXT file.';
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      this.errorMessage = 'File size exceeds 10MB limit.';
+      return;
+    }
+
+    this.uploadFile(file);
+    
+    // Reset input
+    input.value = '';
   }
+
+  private uploadFile(file: File): void {
+    if (!this.sessionId) {
+      this.errorMessage = 'Please start a new chat session first.';
+      return;
+    }
+
+    this.loading = true;
+    this.errorMessage = '';
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('session_id', this.sessionId);
+
+    this.http.post<any>(`${environment.apiBaseUrl}/upload/cv`, formData).subscribe({
+      next: (response: any) => {
+        this.loading = false;
+        
+        // Add success message to conversation
+        const extractedInfo = response.extracted_data ? 
+          this.formatExtractedData(response.extracted_data) : 
+          'Processing your resume...';
+        
+        this.conversationHistory.push({
+          role: 'assistant',
+          content: `✅ Resume uploaded successfully!\n\n${extractedInfo}`,
+          timestamp: new Date(),
+        });
+
+        // Update CV data if available
+        if (response.extracted_data) {
+          const header = response.extracted_data.header || {};
+          const skills = response.extracted_data.technicalSkills || {};
+          const experience = response.extracted_data.workExperience || [];
+          
+          this.cvData = { 
+            ...this.cvData,
+            personalInfo: {
+              fullName: header.fullName || '',
+              email: header.email || '',
+              phone: header.phone || '',
+              location: header.location || '',
+              linkedin: header.linkedin || '',
+              summary: Array.isArray(response.extracted_data.professionalSummary)
+                ? response.extracted_data.professionalSummary.join(' ')
+                : (response.extracted_data.professionalSummary || ''),
+            },
+            skills: this.extractSkillsFromTechnical(skills),
+            experience: experience,
+          };
+        }
+
+        // Auto-continue conversation
+        const continuationMessage = 'Great! I\'ve extracted your resume. Now tell me what role you\'re targeting and I\'ll help enhance your CV further.';
+        this.conversationHistory.push({
+          role: 'assistant',
+          content: continuationMessage,
+          timestamp: new Date(),
+        });
+
+        this.scrollToBottom();
+      },
+      error: (error) => {
+        this.loading = false;
+        const errorMsg = error.error?.detail || error.error?.message || 'Failed to upload resume. Please try again.';
+        this.errorMessage = `Upload failed: ${errorMsg}`;
+        
+        this.conversationHistory.push({
+          role: 'assistant',
+          content: `❌ ${errorMsg}`,
+          timestamp: new Date(),
+        });
+        
+        this.scrollToBottom();
+      },
+    });
+  }
+
+  private formatExtractedData(data: any): string {
+    const lines: string[] = [];
+    
+    // Header (personal info)
+    const header = data.header || {};
+    if (header.fullName || header.email) {
+      lines.push('**Personal Information:**');
+      if (header.fullName) lines.push(`• Name: ${header.fullName}`);
+      if (header.email) lines.push(`• Email: ${header.email}`);
+      if (header.phone) lines.push(`• Phone: ${header.phone}`);
+      if (header.location) lines.push(`• Location: ${header.location}`);
+      lines.push('');
+    }
+
+    // Technical skills
+    const skills = data.technicalSkills || {};
+    const primarySkills = skills.primary?.map((s: any) => s.skill_name || s).slice(0, 5) || [];
+    if (primarySkills.length > 0) {
+      lines.push(`**Top Skills:** ${primarySkills.join(', ')}`);
+      lines.push('');
+    }
+
+    // Work experience
+    const experience = data.workExperience || [];
+    if (experience.length > 0) {
+      lines.push('**Recent Experience:**');
+      experience.slice(0, 2).forEach((exp: any, index: number) => {
+        lines.push(`${index + 1}. **${exp.position}** at ${exp.employer}`);
+        if (exp.project_description) {
+          lines.push(`   ${exp.project_description.substring(0, 100)}...`);
+        }
+      });
+      lines.push('');
+    }
+
+    // Professional summary
+    const summary = data.professionalSummary || [];
+    if (Array.isArray(summary) && summary.length > 0) {
+      lines.push('**Summary:**');
+      lines.push(summary.slice(0, 2).join('\n'));
+    }
+
+    return lines.join('\n') || 'Resume data extracted successfully.';
+  }
+
+  private extractSkillsFromTechnical(technicalSkills: any): string[] {
+    const skills: string[] = [];
+    
+    if (technicalSkills.primary) {
+      technicalSkills.primary.forEach((skill: any) => {
+        if (typeof skill === 'string') {
+          skills.push(skill);
+        } else if (skill.skill_name) {
+          skills.push(skill.skill_name);
+        }
+      });
+    }
+    
+    if (technicalSkills.secondary) {
+      technicalSkills.secondary.forEach((skill: any) => {
+        if (typeof skill === 'string') {
+          skills.push(skill);
+        } else if (skill.skill_name) {
+          skills.push(skill.skill_name);
+        }
+      });
+    }
+    
+    return skills;
+  }
+
+  private scrollToBottom(): void {
+    setTimeout(() => {
+      const messagesContainer = document.querySelector('.chat-main');
+      if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+    }, 100);
+  }
+
+
 
   showTemplateSelector(): void {
     if (!this.sessionId) {
