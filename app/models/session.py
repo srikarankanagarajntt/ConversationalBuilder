@@ -9,7 +9,7 @@ class ConversationMessage(BaseModel):
 class SessionContext(BaseModel):
     session_id: str
     language: str = "en"
-    portal_id: int | None = None  # For POC: tracks the user's portal ID
+    host_address: str | None = None  # Tracks the user's host/IP address
     conversation_history: list[ConversationMessage] = Field(default_factory=list)
     cv_schema: CvSchema
     selected_template: str | None = None

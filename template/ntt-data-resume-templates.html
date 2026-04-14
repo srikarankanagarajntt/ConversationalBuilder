@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en-US">
+	<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta charset="utf-8" />
+		<title>
+		</title>
+		<style>
+			body { line-height:116%; font-family:Aptos; font-size:12pt }
+			h1, h2, h3, h4, h5, h6, p { margin:0pt 0pt 8pt }
+			li, table { margin-top:0pt; margin-bottom:8pt }
+			h1 { margin-top:18pt; margin-bottom:4pt; page-break-inside:avoid; page-break-after:avoid; line-height:116%; font-family:'Aptos Display'; font-size:20pt; font-weight:normal; color:#0f4761 }
+			h2 { margin-top:8pt; margin-bottom:4pt; page-break-inside:avoid; page-break-after:avoid; line-height:116%; font-family:Arial; font-size:14pt; font-weight:bold; color:#0f4761 }
+			h3 { margin-top:8pt; margin-bottom:4pt; page-break-inside:avoid; page-break-after:avoid; line-height:116%; font-family:Aptos; font-size:14pt; font-weight:normal; color:#0f4761 }
+			h4 { margin-top:4pt; margin-bottom:2pt; page-break-inside:avoid; page-break-after:avoid; line-height:116%; font-family:Aptos; font-size:12pt; font-weight:normal; font-style:italic; color:#0f4761 }
+			h5 { margin-top:4pt; margin-bottom:2pt; page-break-inside:avoid; page-break-after:avoid; line-height:116%; font-family:Aptos; font-size:12pt; font-weight:normal; color:#0f4761 }
+			h6 { margin-top:2pt; margin-bottom:0pt; page-break-inside:avoid; page-break-after:avoid; line-height:116%; font-family:Aptos; font-size:12pt; font-weight:normal; font-style:italic; color:#595959 }
+			.Heading7 { margin-top:2pt; margin-bottom:0pt; page-break-inside:avoid; page-break-after:avoid; line-height:116%; font-size:12pt; font-weight:normal; color:#595959 }
+			.Heading8 { margin-bottom:0pt; page-break-inside:avoid; page-break-after:avoid; line-height:116%; font-size:12pt; font-weight:normal; font-style:italic; color:#272727 }
+			.Heading9 { margin-bottom:0pt; page-break-inside:avoid; page-break-after:avoid; line-height:116%; font-size:12pt; font-weight:normal; color:#272727 }
+			.Footer { margin-bottom:0pt; line-height:normal; font-size:12pt }
+			.Header { margin-bottom:0pt; line-height:normal; font-size:12pt }
+			.IntenseQuote { margin:18pt 43.2pt; text-align:center; line-height:116%; border-top:0.75pt solid #0f4761; border-bottom:0.75pt solid #0f4761; padding-top:10pt; padding-bottom:10pt; font-size:12pt; font-style:italic; color:#0f4761 }
+			.ListParagraph { margin-left:36pt; margin-bottom:8pt; line-height:116%; font-size:12pt }
+			.Quote { margin-top:8pt; margin-bottom:8pt; text-align:center; line-height:116%; font-size:12pt; font-style:italic; color:#404040 }
+			.Style1 { margin-bottom:8pt; line-height:116%; border-bottom:0.75pt solid #000000; font-family:Arial; font-size:12pt; font-weight:bold }
+			.Style2 { margin-bottom:8pt; line-height:116%; font-size:12pt }
+			.Subtitle { margin-bottom:8pt; line-height:116%; font-size:14pt; letter-spacing:0.75pt; color:#595959 }
+			.Title { margin-bottom:4pt; line-height:normal; font-family:'Aptos Display'; font-size:28pt; letter-spacing:-0.5pt }
+			span.Heading1Char { font-family:'Aptos Display'; font-size:20pt; color:#0f4761 }
+			span.Heading2Char { font-family:Arial; font-size:14pt; font-weight:bold; color:#0f4761 }
+			span.Heading3Char { font-size:14pt; color:#0f4761 }
+			span.Heading4Char { font-style:italic; color:#0f4761 }
+			span.Heading5Char { color:#0f4761 }
+			span.Heading6Char { font-style:italic; color:#595959 }
+			span.Heading7Char { color:#595959 }
+			span.Heading8Char { font-style:italic; color:#272727 }
+			span.Heading9Char { color:#272727 }
+			span.IntenseEmphasis { font-style:italic; color:#0f4761 }
+			span.IntenseQuoteChar { font-style:italic; color:#0f4761 }
+			span.IntenseReference { font-weight:bold; font-variant:small-caps; letter-spacing:0.25pt; color:#0f4761 }
+			span.QuoteChar { font-style:italic; color:#404040 }
+			span.Strong { font-weight:bold }
+			span.Style1Char { font-family:Arial; font-weight:bold }
+			span.SubtitleChar { font-size:14pt; letter-spacing:0.75pt; color:#595959 }
+			span.TitleChar { font-family:'Aptos Display'; font-size:28pt; letter-spacing:-0.5pt }
+@media (max-width: 900px) { 
+img { 
+   max-width: 100%;
+   height: auto;
+}
+
+.table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+td, th {
+    padding: 8px;
+    text-align: left;
+    border: 1px solid #ddd;
+}
+}	
+
+
+		</style>
+	</head>
+	<body>
+		<div>
+			<div style="clear:both">
+				<p class="Header">
+					<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASYAAABRCAMAAABISvslAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAIEUExURQAAAABruAByuwByvABxvABrvQBvvABxugBvugBqvwBxugBxuwBssQAA/wBxvABvuwBxuwBAvwBttgBxugBwvABxvABwvAByvAB0uQBxuQAAAABVqgCAgABzvwBuugByvABtuwByvABxugBxuABV/wBwvQBVqgBvugBwvABxvABxuwBxvQBxuwBxvABxwQBwuwBxugByuQBxuwBwvABxuwBmzABwvQBxvABvugBxvABwuABvtwByvQBvugBwvABquwBxuwBwugBxuABxuwBxvABxuwBxugBxuwByugBwvwByvABuugCAvwByvABxugBwtwBwuwBwuwBwugBwvQBvuwBwvAByugByuwBvuwBxuwBxvQBwugBxvABsuQBwvABxugBvsQBwvABxvAByuwBxuQBvuABttgBmqgBxvABxxgBuugBxvABxuwBmswBxuQBwuQBxvABttgBttgAAAABxvABwugBxvABwvwBwuwBxuwByuwByuwByuwBxuwBxugBuvgBwuwBwuwBwvABxugBxuABwuwByuwByuwBxugBqtQBxuwB0uQBvvABuuwBpvABxvABxuwByvQBxuwBxuwBwuwBxuwBmvwBvvABuuABxuwBxuwBixABxugBwuQBxvABvvABxuwBvvABvuwBxugBxuwBuuQBxvACA/wByugBxvABwuwBzsyeBR8wAAACsdFJOUwAr9v/uH7221Axz/hoBo77pBAeccszlJhbsAgkCFCW3OJvmEgN7BqdbkLw25sYtS/Gs8sHxBVm9Tt4ZR9O90CnVv5BhkeL769Ag+EoEx+g5j+m2YGWNQ4Bs3hvi2knD6xfZ8sLzbA4P4QlD8OcK0ULPFSoBztL1EK37tcfTLcUz7VJ99YWLnaTzGPoLc38iss13rZnk9RRuQfnqDW9J/Rf9NTzj1zOsAk70bRQMU+JJAAAACXBIWXMAACHVAAAh1QEEnLSdAAAFNElEQVR4Xu2aZ5cURRSGS9qMGMAMZgQUzBFUQMGc45pzVowYMOeAWcw5p/2TVt33vTXVFXqm54N7jl3Ph+16n3uru+fu2TOzvWsqlUqlUqlUKpVKpVKpVCqVuWC7eQ3ZfgezI5dNsxPLFcfOnEqOXdgzeHblQEqwbeDM5zTK7MbOAbOAo+hkdzYPFw5iDHuwe6hwDJY994pGttAs4sqyN/uHCYfQNPvYsC/XilX7cdk0+0v/MDmAM2gOtGEx10v88FwLl4N+v+MEMAKuDxotD3b6EIbhzomvHwM4FOvDJGCNwuFhGCBH8PUvlcQga3MkwjIJWCdzSqQKHGPKPtjcYjlLmdqKgnfk/FHSPx08xdFhWonAtCoM4UQslIHVjGNM2QebI44p144t7SlcaPpB8QQIx4XBmOPDeALCiUjgJDgLhZ6v39377UwRJ5drp/S80Klyqv6chu2nI61GQjBmTSsi+KKDynIGDVXPu48uEdNRm/JCfWnvRjiTSTPDWa0kwAg0fguOMWUfbE5YW6719evkOr3B5vWtdDaTZgYm9xlUgRHOaSljNhBkhg1lH2ze6DkXQu6ASjkPlZXFE7JPOR/1C+Q6fbkQm5l4mxcxmaXITDoUJofki+Wr6lawxFnJ+kRekhjPpVK5jKl8IeXycQ0dXNHee2U7XtWOa9vRIvlqHPgAQdZBT5yVrE9lajxSmcfQ2QnGNpTBVr/3GsRrGZF89bp2tEiead1AuHbEWcn6VKbGI5U5GZPm68NwgwQHMoND8oy5UY43jVTQE2cl61OZGo9U5nRMTXPzci7CEyMvYLJInmndQbAU4qxkfSoDsxHrNh1jugUmgsV+YOutTMYsgwi5jSULxO1MFsl2TAtlcYdXwc3EWcn6VI4MVjHlMd0JEcNqP7B1NCZzF0wACw6IzJiCexytQJyVrE+lN3djFVMc0z3ICSz3I91L4wl+xFi7l8ki2Y3pPlm5X2RkEZwwzkrWp9IbLBKKY0JMYbkfmb3304FwSvGdULgxjUp+QeKsZH0qvcEiYc7GZB6gtPC5AXkQkskhWcaE5UPJ3SZZyfpUqsET+YdpBTGlMeHNN3uqKeD7GZOy6RGxjzIqj4kNmyUHY7I1PSpxVrI+lWrW8xggpjQmfEsfZxLExFecjCew90nGbtAbXkgyxqR3wYMnzkrWp1LNdGPaxCSIia84Idi7makb9D7F5BDBMT0tIbmZOCtZn0o1043pGSZBTHzFCcHeiTY/m7aK4JgQtsjXoCnOStYn8jk1z8vxBWpBTGlML7ajIzWT8xI2v8zYBTrTK+uYXpEEqCxxVrIeMsWYV7mKKY2p41RTMfHu19D4OqMgRscU3hmNJc5K1kMmvFEu/cdjepOxDBuZgBg/prckOt6msUAwBGQ9ZEJHqTimd5ATWO7LuxNu35rrE+PHNHopzI5EkKyHjFnjSu8xRBTHVDhX5k4mg9vH7H8/2yVqNCY91weMDhiGgKyHjOAvAksY25THlD/ZmJdZRh8KbGXO8iGbxozJfORE6z8QpWXSMa2K+fgTVhyLP6UN6HgYZsy2z9gVwFJ/cP6m+Zw5wxdsmfp78X+AIygP4UvWm68oBsnopz7//5Vfs9p8QzFQvuUYLDQB37HSNPNpBsv3HITlhx/pwOiRePMT1YD5maMQtmyD/OVXCgA5bPDQv4Pf2Dh0OI4Cv7Orwme4OTo/eg6OPziVmD9Zr5C/OJiAv1t/XKmQf/ynSUvwh85KhtnZWa4qlUqlUqlUKpVKpVKpVCqVEGP+BdehlBVp4Hu+AAAAAElFTkSuQmCC" width="183" height="50" alt="A blue text on a black background&#xA;&#xA;AI-generated content may be incorrect." />
+				</p>
+				<p class="Header">
+					&#xa0;
+				</p>
+			</div>
+			<table style="width:101.48%; margin-bottom:0pt; padding:0pt; border-spacing:0pt">
+				<tr style="height:3pt">
+					<td style="width:100%; padding:0pt; vertical-align:top">
+						<p style="line-height:116%; font-size:18pt">
+							<span style="font-family:Georgia; color:#0070c0">Internal Resume Template</span>
+						</p>
+						<p>
+							<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASYAAABRCAMAAABISvslAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAIEUExURQAAAABruAByuwByvABxvABrvQBvvABxugBvugBqvwBxugBxuwBssQAA/wBxvABvuwBxuwBAvwBttgBxugBwvABxvABwvAByvAB0uQBxuQAAAABVqgCAgABzvwBuugByvABtuwByvABxugBxuABV/wBwvQBVqgBvugBwvABxvABxuwBxvQBxuwBxvABxwQBwuwBxugByuQBxuwBwvABxuwBmzABwvQBxvABvugBxvABwuABvtwByvQBvugBwvABquwBxuwBwugBxuABxuwBxvABxuwBxugBxuwByugBwvwByvABuugCAvwByvABxugBwtwBwuwBwuwBwugBwvQBvuwBwvAByugByuwBvuwBxuwBxvQBwugBxvABsuQBwvABxugBvsQBwvABxvAByuwBxuQBvuABttgBmqgBxvABxxgBuugBxvABxuwBmswBxuQBwuQBxvABttgBttgAAAABxvABwugBxvABwvwBwuwBxuwByuwByuwByuwBxuwBxugBuvgBwuwBwuwBwvABxugBxuABwuwByuwByuwBxugBqtQBxuwB0uQBvvABuuwBpvABxvABxuwByvQBxuwBxuwBwuwBxuwBmvwBvvABuuABxuwBxuwBixABxugBwuQBxvABvvABxuwBvvABvuwBxugBxuwBuuQBxvACA/wByugBxvABwuwBzsyeBR8wAAACsdFJOUwAr9v/uH7221Axz/hoBo77pBAeccszlJhbsAgkCFCW3OJvmEgN7BqdbkLw25sYtS/Gs8sHxBVm9Tt4ZR9O90CnVv5BhkeL769Ag+EoEx+g5j+m2YGWNQ4Bs3hvi2knD6xfZ8sLzbA4P4QlD8OcK0ULPFSoBztL1EK37tcfTLcUz7VJ99YWLnaTzGPoLc38iss13rZnk9RRuQfnqDW9J/Rf9NTzj1zOsAk70bRQMU+JJAAAACXBIWXMAACHVAAAh1QEEnLSdAAAFNElEQVR4Xu2aZ5cURRSGS9qMGMAMZgQUzBFUQMGc45pzVowYMOeAWcw5p/2TVt33vTXVFXqm54N7jl3Ph+16n3uru+fu2TOzvWsqlUqlUqlUKpVKpVKpVCqVuWC7eQ3ZfgezI5dNsxPLFcfOnEqOXdgzeHblQEqwbeDM5zTK7MbOAbOAo+hkdzYPFw5iDHuwe6hwDJY994pGttAs4sqyN/uHCYfQNPvYsC/XilX7cdk0+0v/MDmAM2gOtGEx10v88FwLl4N+v+MEMAKuDxotD3b6EIbhzomvHwM4FOvDJGCNwuFhGCBH8PUvlcQga3MkwjIJWCdzSqQKHGPKPtjcYjlLmdqKgnfk/FHSPx08xdFhWonAtCoM4UQslIHVjGNM2QebI44p144t7SlcaPpB8QQIx4XBmOPDeALCiUjgJDgLhZ6v39377UwRJ5drp/S80Klyqv6chu2nI61GQjBmTSsi+KKDynIGDVXPu48uEdNRm/JCfWnvRjiTSTPDWa0kwAg0fguOMWUfbE5YW6719evkOr3B5vWtdDaTZgYm9xlUgRHOaSljNhBkhg1lH2ze6DkXQu6ASjkPlZXFE7JPOR/1C+Q6fbkQm5l4mxcxmaXITDoUJofki+Wr6lawxFnJ+kRekhjPpVK5jKl8IeXycQ0dXNHee2U7XtWOa9vRIvlqHPgAQdZBT5yVrE9lajxSmcfQ2QnGNpTBVr/3GsRrGZF89bp2tEiead1AuHbEWcn6VKbGI5U5GZPm68NwgwQHMoND8oy5UY43jVTQE2cl61OZGo9U5nRMTXPzci7CEyMvYLJInmndQbAU4qxkfSoDsxHrNh1jugUmgsV+YOutTMYsgwi5jSULxO1MFsl2TAtlcYdXwc3EWcn6VI4MVjHlMd0JEcNqP7B1NCZzF0wACw6IzJiCexytQJyVrE+lN3djFVMc0z3ICSz3I91L4wl+xFi7l8ki2Y3pPlm5X2RkEZwwzkrWp9IbLBKKY0JMYbkfmb3304FwSvGdULgxjUp+QeKsZH0qvcEiYc7GZB6gtPC5AXkQkskhWcaE5UPJ3SZZyfpUqsET+YdpBTGlMeHNN3uqKeD7GZOy6RGxjzIqj4kNmyUHY7I1PSpxVrI+lWrW8xggpjQmfEsfZxLExFecjCew90nGbtAbXkgyxqR3wYMnzkrWp1LNdGPaxCSIia84Idi7makb9D7F5BDBMT0tIbmZOCtZn0o1043pGSZBTHzFCcHeiTY/m7aK4JgQtsjXoCnOStYn8jk1z8vxBWpBTGlML7ajIzWT8xI2v8zYBTrTK+uYXpEEqCxxVrIeMsWYV7mKKY2p41RTMfHu19D4OqMgRscU3hmNJc5K1kMmvFEu/cdjepOxDBuZgBg/prckOt6msUAwBGQ9ZEJHqTimd5ATWO7LuxNu35rrE+PHNHopzI5EkKyHjFnjSu8xRBTHVDhX5k4mg9vH7H8/2yVqNCY91weMDhiGgKyHjOAvAksY25THlD/ZmJdZRh8KbGXO8iGbxozJfORE6z8QpWXSMa2K+fgTVhyLP6UN6HgYZsy2z9gVwFJ/cP6m+Zw5wxdsmfp78X+AIygP4UvWm68oBsnopz7//5Vfs9p8QzFQvuUYLDQB37HSNPNpBsv3HITlhx/pwOiRePMT1YD5maMQtmyD/OVXCgA5bPDQv4Pf2Dh0OI4Cv7Orwme4OTo/eg6OPziVmD9Zr5C/OJiAv1t/XKmQf/ynSUvwh85KhtnZWa4qlUqlUqlUKpVKpVKpVCqVEGP+BdehlBVp4Hu+AAAAAElFTkSuQmCC" width="122" height="34" alt="A blue text on a black background&#xA;&#xA;AI-generated content may be incorrect." />
+						</p>
+						<h2 style="line-height:normal">
+							First/Last Name 
+						</h2>
+						<h2 style="line-height:normal">
+							Title
+						</h2>
+						<p class="Style2" style="line-height:normal; font-size:11pt">
+							<span style="font-family:Arial">Location: </span>
+						</p>
+						<p class="Style2">
+							<span style="height:0pt; display:block; position:absolute; z-index:0"><img src="1775815846_ntt-data-resume-templates/1775815846_ntt-data-resume-templates-3.png" width="619" height="1" alt="" style="margin-top:5.85pt; margin-left:1.25pt; position:absolute" /></span>&#xa0;
+						</p>
+						<h2 style="margin-top:0pt; margin-bottom:0pt; line-height:normal">
+							Professional Summary
+						</h2>
+						<ul style="margin:0pt; padding-left:0pt">
+							<li class="ListParagraph" style="margin-top:6pt; margin-left:10.06pt; margin-bottom:6pt; line-height:normal; padding-left:7.94pt; font-family:serif; font-size:11pt">
+								<span style="font-family:Arial">&lt;Add short</span><span style="font-family:Arial; letter-spacing:-0.3pt"> </span><span style="font-family:Arial">bullet</span><span style="font-family:Arial; letter-spacing:-0.3pt"> </span><span style="font-family:Arial">points</span><span style="font-family:Arial; letter-spacing:-0.25pt"> </span><span style="font-family:Arial">of</span><span style="font-family:Arial; letter-spacing:-0.75pt"> </span><span style="font-family:Arial">your</span><span style="font-family:Arial; letter-spacing:-0.55pt"> </span><span style="font-family:Arial">years</span><span style="font-family:Arial; letter-spacing:-0.4pt"> </span><span style="font-family:Arial">of</span><span style="font-family:Arial; letter-spacing:-0.75pt"> </span><span style="font-family:Arial">experience</span><span style="font-family:Arial; letter-spacing:-0.3pt"> </span><span style="font-family:Arial">in</span><span style="font-family:Arial; letter-spacing:-0.3pt"> </span><span style="font-family:Arial">a</span><span style="font-family:Arial; letter-spacing:-1.95pt"> </span><span style="font-family:Arial">certain industry or service area and the roles that you have</span><span style="font-family:Arial; letter-spacing:-0.05pt"> </span><span style="font-family:Arial">held&gt;</span>
+							</li>
+						</ul>
+						<p style="margin-top:6pt; margin-bottom:6pt; line-height:normal; font-size:11pt">
+							<span style="font-family:Arial">&lt;Summarize your</span><span style="font-family:Arial; letter-spacing:-0.45pt"> </span><span style="font-family:Arial">breadth</span><span style="font-family:Arial; letter-spacing:-0.45pt"> </span><span style="font-family:Arial">of</span><span style="font-family:Arial; letter-spacing:-0.85pt"> </span><span style="font-family:Arial">experience</span><span style="font-family:Arial; letter-spacing:-0.45pt"> </span><span style="font-family:Arial">and</span><span style="font-family:Arial; letter-spacing:-0.85pt"> </span><span style="font-family:Arial; letter-spacing:-0.1pt">expertise here&gt;</span>
+						</p>
+						<p style="margin-bottom:0pt; line-height:normal">
+							&#xa0;
+						</p>
+						<h2 style="margin-top:0pt; margin-bottom:0pt; line-height:normal">
+							Application Experience
+						</h2>
+						<table style="width:471.85pt; margin-bottom:0pt; padding:0pt; border-spacing:0pt">
+							<tr style="height:51.2pt">
+								<td style="width:471.85pt; padding:0pt; vertical-align:top">
+									<table style="margin-bottom:0pt; padding:0pt; border-collapse:collapse">
+										<tr style="height:51.2pt">
+											<td style="width:186.3pt; padding:0pt 5.4pt; vertical-align:top">
+												<ul style="margin:0pt; padding-left:0pt">
+													<li style="margin-top:6pt; margin-left:22.4pt; margin-bottom:6pt; text-indent:-22.4pt; line-height:normal; font-family:serif; font-size:11pt; list-style-position:inside">
+														<span style="width:3.44pt; font:7pt 'Times New Roman'; display:inline-block">&#xa0; </span><span style="font-family:Arial">&lt;Add bullet points of applications you have experience/expertise in (beyond beginner level)&gt;</span>
+													</li>
+												</ul>
+											</td>
+											<td style="width:249.7pt; padding:0pt 5.4pt; vertical-align:top">
+												<p class="ListParagraph" style="margin-left:54pt; margin-bottom:0pt; line-height:normal; font-size:11pt">
+													<span style="font-family:Arial">&#xa0;</span>
+												</p>
+											</td>
+										</tr>
+									</table>
+									<p class="ListParagraph" style="margin-left:0pt; margin-bottom:0pt; line-height:normal; font-size:10.5pt">
+									</p>
+								</td>
+							</tr>
+							<tr style="height:7.6pt">
+								<td style="width:471.85pt; padding:0pt; vertical-align:top">
+									<p style="margin-right:19.75pt; margin-bottom:0pt; line-height:normal; widows:0; orphans:0">
+										&#xa0;
+									</p>
+								</td>
+							</tr>
+						</table>
+						<h2 style="margin-top:0pt; margin-bottom:0pt; line-height:normal">
+							Highlights
+						</h2>
+						<ul style="margin:0pt; padding-left:0pt">
+							<li class="ListParagraph" style="margin-top:6pt; margin-left:10.06pt; margin-bottom:6pt; line-height:normal; padding-left:7.79pt; font-family:serif; font-size:11pt">
+								<span style="font-family:Arial">&lt;Add high-level</span><span style="font-family:Arial; letter-spacing:-0.05pt"> </span><span style="font-family:Arial">summary of</span><span style="font-family:Arial; letter-spacing:-0.7pt"> </span><span style="font-family:Arial">your</span><span style="font-family:Arial; letter-spacing:-0.45pt"> </span><span style="font-family:Arial">most</span><span style="font-family:Arial; letter-spacing:-0.15pt"> </span><span style="font-family:Arial">valuable</span><span style="font-family:Arial; letter-spacing:-0.15pt"> </span><span style="font-family:Arial">contributions</span><span style="font-family:Arial; letter-spacing:-0.15pt"> </span><span style="font-family:Arial">and achievements on past projects&gt;</span>
+							</li>
+						</ul>
+						<table style="width:451.5pt; margin-bottom:0pt; padding:0pt; border-spacing:0pt">
+							<tr style="height:124.6pt">
+								<td style="width:451.5pt; padding:0pt; vertical-align:top">
+									<p style="margin-bottom:0pt; line-height:normal; font-size:10.5pt">
+										<span style="font-family:Arial">&#xa0;</span>
+									</p>
+									<table style="width:462.3pt; margin-bottom:0pt; padding:0pt; border-spacing:0pt">
+										<tr style="height:4.25pt">
+											<td style="width:118.75pt; padding:0pt; vertical-align:middle">
+												<p style="line-height:normal; font-size:14pt">
+													<strong><span style="font-family:Arial; color:#0f4761">Work Experience</span></strong><br /><br /><span style="font-family:Arial; font-size:11pt">Facility:</span>
+												</p>
+											</td>
+											<td style="width:260.05pt; padding:0pt; vertical-align:middle">
+												<p style="margin-bottom:0pt; line-height:normal; font-size:11pt">
+													<span style="font-family:Arial">&#xa0;</span>
+												</p>
+											</td>
+											<td style="width:83.45pt; padding:0pt; vertical-align:middle">
+												<p style="margin-bottom:0pt; line-height:normal; font-size:11pt">
+													<span style="font-family:Arial">year</span>
+												</p>
+											</td>
+										</tr>
+										<tr style="height:4.25pt">
+											<td style="width:118.75pt; padding:0pt; vertical-align:middle">
+												<p style="margin-bottom:0pt; line-height:normal; font-size:11pt">
+													<span style="font-family:Arial">Position/Title:</span>
+												</p>
+											</td>
+											<td colspan="2" style="width:343.5pt; padding:0pt; vertical-align:middle">
+												<p style="margin-bottom:0pt; line-height:150%; font-size:11pt">
+													<span style="font-family:Arial">&#xa0;</span>
+												</p>
+											</td>
+										</tr>
+										<tr style="height:9.3pt">
+											<td colspan="3" style="width:462.3pt; padding:0pt; vertical-align:middle">
+												<p style="margin-bottom:0pt; line-height:normal; font-size:11pt">
+													<span style="font-family:Arial">Primary Responsibilities: </span>
+												</p>
+												<ul style="margin:0pt; padding-left:0pt">
+													<li class="ListParagraph" style="margin-left:28.06pt; margin-bottom:0pt; line-height:normal; padding-left:7.94pt; font-family:serif; font-size:11pt">
+														<span style="font-family:Arial">&lt; Add bullet points of your primary responsibilities&gt;</span>
+													</li>
+												</ul>
+												<p style="margin-bottom:0pt; line-height:normal; font-size:11pt">
+													<span style="font-family:Arial">&#xa0;</span>
+												</p>
+											</td>
+										</tr>
+									</table>
+									<h2 style="margin-top:0pt; line-height:normal">
+										Education
+									</h2>
+									<table style="width:479.1pt; margin-bottom:0pt; padding:0pt; border-spacing:0pt">
+										<tr style="height:2.8pt">
+											<td style="width:108.05pt; padding:0pt; vertical-align:middle">
+												<p style="margin-bottom:0pt; line-height:normal; font-size:11pt">
+													<span style="font-family:Arial">Institution: </span>
+												</p>
+											</td>
+											<td style="width:371.05pt; padding:0pt; vertical-align:middle">
+												<p style="margin-bottom:0pt; line-height:150%; font-size:11pt">
+													<span style="font-family:Arial">&#xa0;</span>
+												</p>
+											</td>
+										</tr>
+										<tr style="height:2.8pt">
+											<td style="width:108.05pt; padding:0pt; vertical-align:middle">
+												<p style="margin-bottom:0pt; line-height:normal; font-size:11pt">
+													<span style="font-family:Arial">Result/Degree: </span>
+												</p>
+											</td>
+											<td style="width:371.05pt; padding:0pt; vertical-align:middle">
+												<p style="margin-bottom:0pt; line-height:150%; font-size:11pt">
+													<span style="font-family:Arial">&#xa0;</span>
+												</p>
+											</td>
+										</tr>
+									</table>
+									<h2 style="margin-top:0pt; margin-bottom:0pt; line-height:normal; font-size:10pt">
+										&#xa0;
+									</h2>
+									<h2 style="margin-top:0pt; line-height:normal">
+										Additional Information/Memberships 
+									</h2>
+									<p style="margin-bottom:0pt; line-height:normal; font-size:11pt">
+										<span style="font-family:Arial">White Papers:</span>
+									</p>
+									<p style="margin-bottom:0pt; line-height:normal; font-size:11pt">
+										<span style="font-family:Arial">Memberships:</span>
+									</p>
+								</td>
+							</tr>
+						</table>
+						<p style="line-height:116%; font-size:10.5pt">
+						</p>
+					</td>
+				</tr>
+			</table>
+			<p>
+				<span style="color:#0070c0">&#xa0;</span>
+			</p>
+			<div style="clear:both">
+				<p class="Footer">
+					<span style="font-family:Arial; font-size:9pt">© 2025 NTT DATA, Inc.</span><span style="width:138.84pt; font-family:Arial; font-size:9pt; display:inline-block">&#xa0;</span><span style="width:203.98pt; font-family:Arial; font-size:9pt; display:inline-block">&#xa0;</span><span style="font-family:Arial; font-size:9pt">Internal</span><span style="font-family:Arial">              </span><span style="font-family:Arial">              </span>
+				</p>
+			</div>
+		</div>
+</body>
+</html>

@@ -1,0 +1,138 @@
+{
+  "sessionId": "<session_id>",
+  "meta": {
+    "createdAt": "<YYYY-MM-DDTHH:MM:SSZ>",
+    "updatedAt": "<YYYY-MM-DDTHH:MM:SSZ>",
+    "version": "1.0"
+  },
+  "header": {
+    "fullName": "John Bapist",
+    "jobTitle": "Senior Software Engineer",
+    "contact": {
+      "emailId": "email@example.com",
+      "officialEmailId": "official.email@example.com",
+      "phone": "73434893743",
+      "location": "Pune, Maharashtra, India",
+      "linkedin": "https://www.linkedin.com/feed/>",
+      "github": "https://github.com/srikarankanagarajntt/ConversationalBuilder",
+      "portfolio": "https://github.com/srikarankanagarajntt/ConversationalBuilder"
+    }
+  },
+  "professionalSummary": [
+    "Software engineer with 8 years of experience in designing, developing, and maintaining scalable web applications.",
+    "Strong background in backend development, API design, database systems, and cloud-based solutions.",
+    "Experienced in collaborating with cross-functional teams to deliver reliable software products on time.",
+    "Focused on writing clean, maintainable code and improving application performance and stability."
+  ],
+  "technicalSkills": {
+    "primary": [
+      "Java",
+      "Spring Boot",
+      "REST APIs",
+      "Microservices",
+      "SQL",
+      "PostgreSQL",
+      "MySQL"
+    ],
+    "secondary": [
+      "Python",
+      "Docker",
+      "Kubernetes",
+      "AWS",
+      "Redis",
+      "Git",
+      "CI/CD"
+    ],
+    "tools": [
+      "IntelliJ IDEA",
+      "Postman",
+      "Jira",
+      "GitHub",
+      "Maven",
+      "Gradle"
+    ]
+  },
+  "currentResponsibilities": [
+    "Designing and developing backend services for enterprise applications.",
+    "Building and maintaining RESTful APIs for internal and external consumers.",
+    "Optimizing database queries and improving application performance.",
+    "Collaborating with product, QA, and DevOps teams to deliver production-ready releases.",
+    "Reviewing code and guiding junior developers on best practices."
+  ],
+  "workExperience": [
+    {
+      "jobTitle": "Senior Software Engineer",
+      "companyName": "NTT DATA",
+      "location": "Pune, India",
+      "startDate": "2025-09",
+      "endDate": "Present",
+      "yearsOfExperience": "3+ years",
+      "responsibilities": [
+        "Developed scalable backend services using Java and Spring Boot.",
+        "Implemented secure authentication and authorization flows.",
+        "Improved API response times through caching and query optimization.",
+        "Worked on cloud deployment and containerized applications."
+      ],
+      "achievements": [
+        "Reduced API latency by improving service and database performance.",
+        "Delivered critical features for high-traffic business workflows."
+      ]
+    },
+    {
+      "jobTitle": "Software Engineer",
+      "companyName": "My_Company",
+      "location": "Bengaluru, India",
+      "startDate": "2021-09",
+      "endDate": "2025-08",
+      "yearsOfExperience": "3 years",
+      "responsibilities": [
+        "Built and maintained enterprise web applications.",
+        "Integrated third-party services and internal APIs.",
+        "Worked closely with QA to resolve defects and improve product quality."
+      ],
+      "achievements": [
+        "Contributed to successful delivery of multiple releases.",
+        "Improved code maintainability through refactoring and testing."
+      ]
+    },
+    {
+      "jobTitle": "Junior Software Developer",
+      "companyName": "My_Company-3",
+      "location": "Remote",
+      "startDate": "2018-09",
+      "endDate": "2021-08",
+      "yearsOfExperience": "2 years",
+      "responsibilities": [
+        "Assisted in developing application features and bug fixes.",
+        "Wrote unit tests and supported deployment activities.",
+        "Participated in code reviews and sprint planning."
+      ],
+      "achievements": [
+        "Gained experience across the full software development lifecycle."
+      ]
+    }
+  ],
+  "personalDetails": {
+    "dateOfBirth": "1996-23-05",
+    "nationality": "Indian",
+    "maritalStatus": "Married",
+    "languages": [
+      "English",
+      "Hindi",
+      "Marathi"
+    ],
+    "address": {
+  "line1": "Flat No. 402, Green Heights Apartment",
+  "line2": "Baner Road, Near Orchid School",
+  "city": "Pune",
+  "state": "Maharashtra",
+  "country": "India",
+  "postalCode": "411045"
+}
+  },
+  "declaration": {
+    "place": "Pune",
+    "date": "<YYYY-MM-DD>",
+    "text": "I hereby declare that the above information is true and correct to the best of my knowledge and belief."
+  }
+}

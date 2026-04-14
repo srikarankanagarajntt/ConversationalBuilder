@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from app.core.security import get_current_user
 from app.models.requests import CreateSessionRequest, ConversationMessageRequest
@@ -11,28 +11,38 @@ router = APIRouter()
 
 @router.post("/session", response_model=SessionResponse, tags=["Session Management"])
 async def create_or_get_session(
-    request: CreateSessionRequest,
+    raw_request: Request,
     user=Depends(get_current_user),
     state_service: StateService = Depends(get_state_service),
 ) -> SessionResponse:
     """
-    Entry Point: Create or get existing session using portal_id.
+    Entry Point: Create or get existing session using client host IP from headers.
 
-    This is the gateway endpoint - users must call this first to get a session_id.
-    All other API operations require a valid session_id.
-
-    If a session already exists for this portal_id (within 30 minutes), it will be reused.
-    Otherwise, a new session is created.
-
-    Args:
-        portal_id: Your portal/user ID (required)
-        language: Preferred language (default: "en")
-
-    Returns:
-        session_id: Use this for all subsequent API calls
-        cv_schema: Your CV data structure
+    This endpoint does not require a request body.
     """
-    return state_service.create_session(request, user)
+    # Prefer host IP from headers; fall back to connection info.
+    header_ip = (
+        raw_request.headers.get("host_ip_address")
+        or raw_request.headers.get("x-host-ip-address")
+        or raw_request.headers.get("x-real-ip")
+        or (raw_request.headers.get("x-forwarded-for").split(",")[0].strip() if raw_request.headers.get("x-forwarded-for") else None)
+    )
+    fallback_ip = raw_request.client.host if raw_request.client else None
+    host_ip = header_ip or fallback_ip
+
+    # Inject host_address into user context for StateService
+    if isinstance(user, dict):
+        user = {**user, "host_address": host_ip}
+    else:
+        try:
+            setattr(user, "host_address", host_ip)
+        except Exception:
+            user = {"host_address": host_ip}
+
+    # No client payload; use default session request
+    req_model = CreateSessionRequest(language="en")
+
+    return state_service.create_session(req_model, user)
 
 @router.get("/session/{session_id}", response_model=SessionResponse, tags=["Session Management"])
 async def get_session(

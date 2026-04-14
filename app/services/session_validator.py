@@ -26,12 +26,12 @@ def validate_session_exists(session_id: str) -> None:
     if not session_id or not session_id.strip():
         raise AppException(
             code="SESSION_REQUIRED",
-            message="Session ID is required. Please create a session first by providing your portal_id.",
+            message="Session ID is required. Please create a session first using the /session endpoint.",
             status_code=401,
             details=[
                 {
                     "field": "session_id",
-                    "issue": "Missing session ID. POST /api/conversation/session with portal_id to create/get session."
+                    "issue": "Missing session ID. POST /api/conversation/session to create/get session."
                 }
             ]
         )
@@ -43,7 +43,7 @@ def validate_session_exists(session_id: str) -> None:
     except KeyError:
         raise AppException(
             code="SESSION_NOT_FOUND",
-            message="Session not found or has expired. Please create a new session with your portal_id.",
+            message="Session not found or has expired. Please create a new session using the /session endpoint.",
             status_code=404,
             details=[
                 {
@@ -55,7 +55,7 @@ def validate_session_exists(session_id: str) -> None:
     except Exception as e:
         raise AppException(
             code="SESSION_ERROR",
-            message="Error validating session. Please create a new session with your portal_id.",
+            message="Error validating session. Please create a new session using the /session endpoint.",
             status_code=400,
             details=[
                 {
@@ -84,15 +84,15 @@ def get_validated_session(session_id: str):
     return state_service.get_session(session_id)
 
 
-def extract_portal_id_from_session_id(session_id: str) -> int | None:
+def extract_host_address_from_session_id(session_id: str) -> str | None:
     """
-    Extract portal_id from session_id format: {uuid}|{portal_id}
+    Extract host_address from session_id format: {uuid}|{host_address}
 
     Args:
-        session_id: Session ID in format "uuid|portal_id"
+        session_id: Session ID in format "uuid|host_address"
 
     Returns:
-        Portal ID as integer, or None if format is invalid
+        Host address as string, or None if format is invalid
     """
     if not session_id or "|" not in session_id:
         return None
@@ -100,9 +100,8 @@ def extract_portal_id_from_session_id(session_id: str) -> int | None:
     try:
         parts = session_id.split("|")
         if len(parts) == 2:
-            return int(parts[1])
+            return parts[1]
     except (ValueError, IndexError):
         pass
 
     return None
-

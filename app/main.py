@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from apscheduler.schedulers.background import BackgroundScheduler
+import asyncio
 import logging
 
 from app.api import health, conversation, voice, upload, template, preview, export, cache
@@ -9,40 +9,55 @@ from app.core.config import get_settings
 from app.core.exceptions import register_exception_handlers
 from app.services.state_service import get_state_service
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+)
+
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-# Background scheduler for session cleanup
-scheduler = BackgroundScheduler()
+# Async background task for session cleanup (replaces APScheduler)
+_cleanup_task: asyncio.Task | None = None
+_cleanup_stop_event = asyncio.Event()
+
+async def _cleanup_sessions_periodically() -> None:
+    """Background task to cleanup expired sessions every 30 minutes."""
+    while not _cleanup_stop_event.is_set():
+        try:
+            state_service = get_state_service()
+            removed_count = state_service.cleanup_expired_sessions()
+            logger.info(f"Session cleanup task executed. Removed {removed_count} expired sessions.")
+        except Exception as e:
+            logger.exception(f"Failed during session cleanup: {e}")
+        # Wait up to 30 minutes, or exit early if stop event is set
+        try:
+            await asyncio.wait_for(_cleanup_stop_event.wait(), timeout=1800)
+        except asyncio.TimeoutError:
+            # Timeout -> run next cycle
+            pass
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global _cleanup_task
     # Startup event
     try:
-        scheduler.add_job(
-            cleanup_sessions,
-            "interval",
-            minutes=30,
-            id="cleanup_sessions",
-            name="Cleanup expired sessions every 30 minutes"
-        )
-        scheduler.start()
-        logger.info("✅ Background session cleanup scheduler started (30-minute interval)")
+        _cleanup_stop_event.clear()
+        _cleanup_task = asyncio.create_task(_cleanup_sessions_periodically())
+        logger.info("✅ Background session cleanup task started (30-minute interval)")
     except Exception as e:
-        logger.error(f"❌ Failed to start scheduler: {e}")
+        logger.error(f"❌ Failed to start cleanup task: {e}")
 
     yield
 
     # Shutdown event
-    if scheduler.running:
-        scheduler.shutdown()
-        logger.info("🛑 Background scheduler shutdown")
-
-def cleanup_sessions():
-    """Background task to cleanup expired sessions every 30 minutes."""
-    state_service = get_state_service()
-    removed_count = state_service.cleanup_expired_sessions()
-    logger.info(f"Session cleanup task executed. Removed {removed_count} expired sessions.")
+    _cleanup_stop_event.set()
+    if _cleanup_task:
+        try:
+            await _cleanup_task
+        except asyncio.CancelledError:
+            pass
+        logger.info("🛑 Background cleanup task shutdown")
 
 app = FastAPI(
     title=settings.app_name,

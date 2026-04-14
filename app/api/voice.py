@@ -18,13 +18,13 @@ async def transcribe_audio(
 ) -> VoiceTranscriptionResponse:
     """
     Transcribe audio file to text.
-
+    
     Requires: Valid session_id from /api/conversation/session endpoint
-
+    
     Args:
         session_id: Your session ID (from /session endpoint)
         audio_file: Audio file to transcribe
-
+    
     Returns:
         Transcribed text
     """
@@ -42,13 +42,13 @@ async def transcribe_and_continue(
 ) -> ConversationMessageResponse:
     """
     Transcribe audio and continue conversation in one call.
-
+    
     Requires: Valid session_id from /api/conversation/session endpoint
-
+    
     Args:
         session_id: Your session ID (from /session endpoint)
         audio_file: Audio file to transcribe
-
+    
     Returns:
         Assistant response based on transcribed audio
     """

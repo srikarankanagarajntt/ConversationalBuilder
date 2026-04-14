@@ -5,8 +5,18 @@ from app.models.session import ConversationMessage
 
 class PromptService:
     def build_conversation_prompt(self, schema: CvSchema, history: list[ConversationMessage], message: str) -> str:
-        schema_payload = schema.model_dump(by_alias=True)
-        recent_history = [{"role": m.role, "content": m.content} for m in history[-10:]]
+        schema_payload = schema.model_dump(
+            by_alias=True,
+            include={
+                "header": {"full_name", "job_title", "contact"},
+                "professional_summary": True,
+                "technical_skills": True,
+                "current_responsibilities": True,
+                "work_experience": True,
+                "declaration": True,
+            },
+        )
+        recent_history = [{"role": m.role, "content": m.content} for m in history[-4:]]
 
         return (
             "You are an NTT DATA CV builder assistant. "
