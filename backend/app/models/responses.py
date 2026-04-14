@@ -29,6 +29,7 @@ class ConversationResponse(BaseResponseModel):
     missingFields: List[str] = []
     nextQuestion: Optional[str] = None
     transcript: Optional[str] = None
+    showPersonalInfoModal: bool = False  # Flag to show personal info collection modal
 
 
 class TranscribeResponse(BaseResponseModel):

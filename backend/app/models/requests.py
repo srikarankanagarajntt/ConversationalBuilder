@@ -1,7 +1,7 @@
 """Request DTOs for all API endpoints."""
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, Field
 
 
@@ -12,6 +12,17 @@ class CreateSessionRequest(BaseModel):
 class ConversationMessageRequest(BaseModel):
     sessionId: str
     message: str = Field(..., min_length=1, max_length=4000)
+
+
+class PersonalInfoRequest(BaseModel):
+    sessionId: str
+    fullName: str
+    email: str
+    phone: str
+    location: str
+    linkedin: str = ""
+    summary: str = ""
+    skills: List[str] = Field(default_factory=list)
 
 
 class TemplateSelectRequest(BaseModel):
