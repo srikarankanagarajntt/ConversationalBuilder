@@ -34,15 +34,15 @@ class ExportService:
             if fmt == "json":
                 file_path = self._export_json(cv, file_id)
                 media_type = "application/json"
-                filename = "cv.json"
+                filename = f"{cv.personalInfo.fullName}_cv.json"
             elif fmt == "docx":
                 file_path = self._export_docx(cv, file_id, template_id)
                 media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                filename = "cv.docx"
+                filename = f"{cv.personalInfo.fullName}_cv.docx"
             elif fmt == "pdf":
                 file_path = self._export_pdf(cv, file_id, template_id)
                 media_type = "application/pdf"
-                filename = "cv.pdf"
+                filename = f"{cv.personalInfo.fullName}_cv.pdf"
             else:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Unknown format: {fmt}")
 
