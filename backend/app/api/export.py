@@ -46,4 +46,9 @@ async def download_file(
 ):
     """Stream the generated export file to the client."""
     file_path, media_type, filename = export_service.get_file_path(file_id)
-    return FileResponse(path=file_path, media_type=media_type, filename=filename)
+    return FileResponse(
+        path=file_path,
+        media_type=media_type,
+        filename=filename,
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )

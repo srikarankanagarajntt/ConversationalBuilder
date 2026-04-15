@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
+import tempfile
 import uuid
 from typing import Any, Dict, Tuple
 
@@ -17,6 +19,10 @@ _jobs: Dict[str, Dict[str, Any]] = {}
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "exports")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+# Master template path
+TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "template")
+MASTER_TEMPLATE = os.path.join(TEMPLATE_DIR, "NTT_DATA_Master_Templates.docx")
+
 
 class ExportService:
     async def create_export_job(self, cv: CvSchema, fmt: str, template_id: str = "ntt-classic") -> Dict[str, Any]:
@@ -24,34 +30,40 @@ class ExportService:
         job_id = str(uuid.uuid4())
         file_id = str(uuid.uuid4())
 
-        if fmt == "json":
-            file_path = self._export_json(cv, file_id)
-            media_type = "application/json"
-            filename = "cv.json"
-        elif fmt == "docx":
-            file_path = self._export_docx(cv, file_id, template_id)
-            media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            filename = "cv.docx"
-        elif fmt == "pdf":
-            file_path = self._export_pdf(cv, file_id)
-            media_type = "application/pdf"
-            filename = "cv.pdf"
-        else:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Unknown format: {fmt}")
+        try:
+            if fmt == "json":
+                file_path = self._export_json(cv, file_id)
+                media_type = "application/json"
+                filename = "cv.json"
+            elif fmt == "docx":
+                file_path = self._export_docx(cv, file_id, template_id)
+                media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                filename = "cv.docx"
+            elif fmt == "pdf":
+                file_path = self._export_pdf(cv, file_id, template_id)
+                media_type = "application/pdf"
+                filename = "cv.pdf"
+            else:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Unknown format: {fmt}")
 
-        job = {
-            "jobId": job_id,
-            "fileId": file_id,
-            "format": fmt,
-            "status": "ready",
-            "filePath": file_path,
-            "mediaType": media_type,
-            "filename": filename,
-            "downloadUrl": f"/api/download/{file_id}",
-        }
-        _jobs[job_id] = job
-        _jobs[file_id] = job  # also indexed by file_id for downloads
-        return job
+            job = {
+                "jobId": job_id,
+                "fileId": file_id,
+                "format": fmt,
+                "status": "ready",
+                "filePath": file_path,
+                "mediaType": media_type,
+                "filename": filename,
+                "downloadUrl": f"/api/download/{file_id}",
+            }
+            _jobs[job_id] = job
+            _jobs[file_id] = job  # also indexed by file_id for downloads
+            return job
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Export failed: {str(e)}"
+            )
 
     def get_job(self, job_id: str) -> Dict[str, Any]:
         job = _jobs.get(job_id)
@@ -68,48 +80,254 @@ class ExportService:
     # ── Format generators ─────────────────────────────────────────────────────
 
     def _export_json(self, cv: CvSchema, file_id: str) -> str:
+        """Export CV as JSON."""
         path = os.path.join(OUTPUT_DIR, f"{file_id}.json")
         with open(path, "w", encoding="utf-8") as f:
             json.dump(cv.model_dump(), f, indent=2)
         return path
 
     def _export_docx(self, cv: CvSchema, file_id: str, template_id: str = "ntt-classic") -> str:
-        from app.services.template_processor import TemplateProcessor
+        """Export CV as DOCX using template rendering."""
+        try:
+            # Render from template
+            rendered_docx_path = self._render_docx_from_template(cv, template_id)
 
-        processor = TemplateProcessor()
-        doc = processor.process_template(cv, template_id)
+            # Verify the rendered file exists and has content
+            if not os.path.exists(rendered_docx_path):
+                raise FileNotFoundError(f"Rendered DOCX file not created: {rendered_docx_path}")
 
-        path = os.path.join(OUTPUT_DIR, f"{file_id}.docx")
-        doc.save(path)
-        return path
+            file_size = os.path.getsize(rendered_docx_path)
+            if file_size == 0:
+                raise ValueError("Rendered DOCX file is empty")
 
-    def _export_pdf(self, cv: CvSchema, file_id: str) -> str:
-        from reportlab.lib.pagesizes import A4
-        from reportlab.lib.styles import getSampleStyleSheet
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+            # Copy to output directory
+            output_path = os.path.join(OUTPUT_DIR, f"{file_id}.docx")
+            with open(rendered_docx_path, "rb") as src:
+                content = src.read()
+                if not content:
+                    raise ValueError("Failed to read rendered DOCX file")
+                with open(output_path, "wb") as dst:
+                    dst.write(content)
 
-        path = os.path.join(OUTPUT_DIR, f"{file_id}.pdf")
-        doc = SimpleDocTemplate(path, pagesize=A4)
-        styles = getSampleStyleSheet()
-        story = []
+            # Verify the output file
+            if not os.path.exists(output_path):
+                raise FileNotFoundError(f"Output DOCX file not created: {output_path}")
 
-        story.append(Paragraph(cv.personalInfo.fullName or "Curriculum Vitae", styles["Title"]))
-        story.append(Paragraph(cv.personalInfo.email, styles["Normal"]))
-        story.append(Spacer(1, 12))
-        story.append(Paragraph(cv.personalInfo.summary, styles["Normal"]))
+            output_size = os.path.getsize(output_path)
+            if output_size == 0:
+                raise ValueError("Output DOCX file is empty")
 
-        if cv.experience:
-            story.append(Spacer(1, 12))
-            story.append(Paragraph("Experience", styles["Heading1"]))
-            for exp in cv.experience:
-                story.append(Paragraph(f"<b>{exp.title}</b> — {exp.company}", styles["Heading2"]))
-                for ach in exp.achievements:
-                    story.append(Paragraph(f"• {ach}", styles["Normal"]))
+            # Cleanup temporary file
+            if os.path.exists(rendered_docx_path):
+                try:
+                    os.remove(rendered_docx_path)
+                except Exception as cleanup_error:
+                    print(f"Warning: Could not clean up temporary file {rendered_docx_path}: {cleanup_error}")
 
-        if cv.skills:
-            story.append(Spacer(1, 12))
-            story.append(Paragraph("Skills", styles["Heading1"]))
-            story.append(Paragraph(", ".join(cv.skills), styles["Normal"]))
+            return output_path
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"DOCX rendering failed: {str(e)}"
+            )
 
-        doc.build(story)
-        return path
+    def _export_pdf(self, cv: CvSchema, file_id: str, template_id: str = "ntt-classic") -> str:
+        """Export CV as PDF (via DOCX rendering + conversion)."""
+        try:
+            # First render DOCX
+            docx_path = self._render_docx_from_template(cv, template_id)
+
+            # Then convert to PDF
+            pdf_path = os.path.join(OUTPUT_DIR, f"{file_id}.pdf")
+            self._convert_docx_to_pdf(docx_path, pdf_path)
+
+            # Cleanup temporary DOCX
+            if os.path.exists(docx_path):
+                os.remove(docx_path)
+
+            return pdf_path
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"PDF conversion failed: {str(e)}"
+            )
+
+    def _render_docx_from_template(self, cv: CvSchema, template_id: str) -> str:
+        """Render DOCX from master template with Jinja2 placeholders."""
+        try:
+            from docxtpl import DocxTemplate
+        except ImportError:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="docxtpl library not installed. Run: pip install docxtpl"
+            )
+
+        # Check if master template exists
+        if not os.path.exists(MASTER_TEMPLATE):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Master template not found: {MASTER_TEMPLATE}"
+            )
+
+        # Load template
+        doc = DocxTemplate(MASTER_TEMPLATE)
+
+        # Prepare context for Jinja2 rendering
+        context = self._prepare_template_context(cv)
+
+        # Render template
+        doc.render(context)
+
+        # Save to temporary file
+        temp_file = os.path.join(tempfile.gettempdir(), f"rendered_{uuid.uuid4()}.docx")
+        doc.save(temp_file)
+
+        return temp_file
+
+    def _prepare_template_context(self, cv: CvSchema) -> Dict[str, Any]:
+        """Prepare CV data for Jinja2 template rendering."""
+        return {
+            # Personal Info
+            "fullName": cv.personalInfo.fullName or "",
+            "jobTitle": cv.header.get("jobTitle") or "",
+            "email": cv.personalInfo.email or "",
+            "phone": cv.personalInfo.phone or "",
+            "location": cv.personalInfo.location or "",
+            "linkedin": cv.personalInfo.linkedin or "",
+            "summary": cv.personalInfo.summary or "",
+
+            # Skills
+            "skills": cv.skills or [],
+
+            # Experience
+            "experience": [
+                {
+                    "company": exp.company,
+                    "title": exp.title,
+                    "startDate": exp.startDate,
+                    "endDate": exp.endDate,
+                    "achievements": exp.achievements or []
+                }
+                for exp in cv.experience
+            ] if cv.experience else [],
+
+            # Education
+            "education": [
+                {
+                    "institution": edu.institution,
+                    "degree": edu.degree,
+                    "field": edu.field,
+                    "startDate": edu.startDate,
+                    "endDate": edu.endDate
+                }
+                for edu in cv.education
+            ] if cv.education else [],
+
+            # Projects
+            "projects": [
+                {
+                    "name": proj.name,
+                    "description": proj.description,
+                    "technologies": proj.technologies or [],
+                    "url": proj.url
+                }
+                for proj in cv.projects
+            ] if cv.projects else [],
+
+            # Certifications
+            "certifications": [
+                {
+                    "name": cert.name,
+                    "issuer": cert.issuer,
+                    "date": cert.date
+                }
+                for cert in cv.certifications
+            ] if cv.certifications else [],
+
+            # Languages
+            "languages": cv.languages or [],
+
+            # Technical Skills with proficiency
+            "technicalSkills": {
+                "primary": cv.technicalSkills.get("primary", []) if cv.technicalSkills else [],
+                "secondary": cv.technicalSkills.get("secondary", []) if cv.technicalSkills else []
+            },
+
+            # Work Experience (from extracted data)
+            "workExperience": cv.workExperience or [],
+
+            # Professional Summary
+            "professionalSummary": cv.professionalSummary or [],
+
+            # Header info
+            "header": cv.header or {}
+        }
+
+    def _convert_docx_to_pdf(self, docx_path: str, pdf_path: str) -> None:
+        """Convert DOCX to PDF using available tools."""
+        if not os.path.exists(docx_path):
+            raise FileNotFoundError(f"DOCX file not found: {docx_path}")
+
+        # Try docx2pdf first (Windows/macOS with Word installed)
+        if self._try_docx2pdf_conversion(docx_path, pdf_path):
+            return
+
+        # Fallback to LibreOffice
+        if self._try_libreoffice_conversion(docx_path, pdf_path):
+            return
+
+        # All methods failed
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="PDF conversion failed: docx2pdf or LibreOffice required"
+        )
+
+    def _try_docx2pdf_conversion(self, docx_path: str, pdf_path: str) -> bool:
+        """Try to convert using docx2pdf library."""
+        try:
+            from docx2pdf import convert
+            convert(docx_path, pdf_path)
+            return os.path.exists(pdf_path)
+        except ImportError:
+            return False
+        except Exception as e:
+            print(f"docx2pdf conversion failed: {e}")
+            return False
+
+    def _try_libreoffice_conversion(self, docx_path: str, pdf_path: str) -> bool:
+        """Try to convert using LibreOffice headless conversion."""
+        try:
+            output_dir = os.path.dirname(pdf_path)
+
+            # Build command for LibreOffice
+            cmd = [
+                "soffice",
+                "--headless",
+                "--convert-to", "pdf",
+                "--outdir", output_dir,
+                docx_path
+            ]
+
+            # Run conversion
+            result = subprocess.run(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=60
+            )
+
+            # Check if conversion succeeded
+            if result.returncode == 0 and os.path.exists(pdf_path):
+                return True
+
+            return False
+        except FileNotFoundError:
+            # LibreOffice not installed
+            return False
+        except subprocess.TimeoutExpired:
+            print("LibreOffice conversion timed out")
+            return False
+        except Exception as e:
+            print(f"LibreOffice conversion error: {e}")
+            return False
+

@@ -5,6 +5,7 @@ import base64
 import os
 import json
 from typing import List
+from pathlib import Path
 
 from fastapi import HTTPException, status
 from app.models.responses import TemplateOption
@@ -21,6 +22,9 @@ TEMPLATE_DIR = os.path.join(
 # Mock data directory
 MOCK_DATA_DIR = os.path.join(TEMPLATE_DIR, "mock_data")
 
+# Supported template file extensions
+SUPPORTED_EXTENSIONS = {'.pdf', '.docx', '.pptx', '.html', '.htm'}
+
 
 def _load_file_as_base64(file_path: str) -> str:
     """Load a file and convert to base64."""
@@ -35,25 +39,6 @@ def _load_file_as_base64(file_path: str) -> str:
         )
 
 
-# Static template catalogue with file references
-TEMPLATES: List[TemplateOption] = [
-    TemplateOption(
-        templateId="ntt-data-docx",
-        templateName="NTT DATA Resume Template (Word)",
-        description="Professional NTT DATA branding resume in Microsoft Word format. Ideal for corporate job applications.",
-        fileType="docx",
-        fileBase64=""  # Loaded dynamically
-    ),
-    TemplateOption(
-        templateId="java-architect-pptx",
-        templateName="Java Lead Architect Resume (PowerPoint)",
-        description="Executive resume template for Java Lead Architect role in PowerPoint format. Perfect for presentations.",
-        fileType="pptx",
-        fileBase64=""  # Loaded dynamically
-    ),
-]
-
-
 def _load_mock_data() -> dict:
     """Load mock CV data from cv_schema.json"""
     try:
@@ -62,6 +47,49 @@ def _load_mock_data() -> dict:
             return json.load(f)
     except FileNotFoundError:
         return {}
+
+
+def _discover_templates() -> List[TemplateOption]:
+    """Dynamically discover template files in the template directory."""
+    templates = []
+
+    if not os.path.exists(TEMPLATE_DIR):
+        return templates
+
+    # Scan template directory for supported file types
+    for file_path in sorted(Path(TEMPLATE_DIR).iterdir()):
+        # Skip directories and mock_data
+        if file_path.is_dir() or file_path.name == "mock_data":
+            continue
+
+        # Check if file has supported extension
+        file_ext = file_path.suffix.lower()
+        if file_ext not in SUPPORTED_EXTENSIONS:
+            continue
+
+        # Extract filename (with extension) - use as templateId
+        file_name = file_path.name
+        template_id = file_name  # Use filename directly as ID
+
+        # Get file type without dot
+        file_type = file_ext.lstrip('.')
+
+        # Create human-readable template name
+        template_name = file_name.rsplit('.', 1)[0]  # Remove extension
+        template_name = template_name.replace('_', ' ').replace('-', ' ').title()
+
+        # Create TemplateOption
+        template = TemplateOption(
+            templateId=template_id,
+            templateName=template_name,
+            description=f"{template_name} - {file_type.upper()} format",
+            fileType=file_type,
+            fileBase64=""  # Will be loaded on demand
+        )
+
+        templates.append(template)
+
+    return templates
 
 
 def _get_mock_preview_data() -> dict:
@@ -78,36 +106,54 @@ def _get_mock_preview_data() -> dict:
 
 class TemplateService:
     def __init__(self):
-        """Initialize templates with base64 encoded file content."""
+        """Initialize templates by discovering files from template directory."""
         self._templates_loaded = False
+        self._templates: List[TemplateOption] = []
         self._mock_data = _load_mock_data()
-        self._mock_preview = _get_mock_preview_data()
         self._load_template_files()
 
     def _load_template_files(self):
-        """Load template files and encode to base64."""
+        """Discover and load template files from template directory."""
         if self._templates_loaded:
             return
 
-        # Load NTT DATA DOCX template
-        ntt_data_path = os.path.join(TEMPLATE_DIR, "NTT_DATA_Resume_Templates.docx")
-        TEMPLATES[0].fileBase64 = _load_file_as_base64(ntt_data_path)
+        # Discover templates from directory
+        self._templates = _discover_templates()
 
-        # Load Java Architect PPTX template
-        java_architect_path = os.path.join(TEMPLATE_DIR, "Resume - Java Lead Architect.pptx")
-        TEMPLATES[1].fileBase64 = _load_file_as_base64(java_architect_path)
+        # Load base64 content for each discovered template
+        for template in self._templates:
+            file_path = os.path.join(TEMPLATE_DIR, f"{template.templateName.replace(' ', '_')}.{template.fileType}")
+
+            # Try exact filename match
+            if not os.path.exists(file_path):
+                # Try case-insensitive search
+                for file in Path(TEMPLATE_DIR).iterdir():
+                    if file.is_file() and file.suffix.lower() == f".{template.fileType}":
+                        # Match by ID
+                        if template.templateId.lower() in file.name.lower().replace(' ', '-'):
+                            file_path = str(file)
+                            break
+
+            if os.path.exists(file_path):
+                template.fileBase64 = _load_file_as_base64(file_path)
+            else:
+                # Try to find by template ID
+                for file in Path(TEMPLATE_DIR).iterdir():
+                    if file.is_file() and file.suffix.lower() == f".{template.fileType}":
+                        template.fileBase64 = _load_file_as_base64(str(file))
+                        break
 
         self._templates_loaded = True
 
     def get_templates(self) -> List[TemplateOption]:
-        """Return available CV template options with base64 encoded files and mock data."""
+        """Return available CV template options with base64 encoded files."""
         self._load_template_files()
-        return TEMPLATES
+        return self._templates
 
     def get_template_by_id(self, template_id: str) -> TemplateOption:
         """Get a template by ID."""
         self._load_template_files()
-        for t in TEMPLATES:
+        for t in self._templates:
             if t.templateId == template_id:
                 return t
         raise HTTPException(
