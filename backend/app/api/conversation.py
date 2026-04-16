@@ -60,7 +60,6 @@ async def submit_personal_info(
         body.email,
         body.phone,
         body.location,
-        body.linkedin,
         body.summary,
         body.skills,
     )

@@ -24,7 +24,10 @@ export interface TemplateOption {
   templateId: string;
   templateName: string;
   description: string;
-  previewImageUrl: string;
+  fileType: string;
+  fileBase64: string;
+  previewImageUrl?: string;
+  previewImageBase64?: string;
 }
 
 export interface TemplateListResponse {
@@ -36,7 +39,6 @@ export interface PersonalInfo {
   email: string;
   phone: string;
   location: string;
-  linkedin: string;
   summary: string;
 }
 
@@ -62,7 +64,7 @@ export class CvApiService {
     return this.http.post<ConversationResponse>(`${environment.apiBaseUrl}/voice/message`, form);
   }
 
-  exportCv(sessionId: string, format: 'pdf' | 'docx' | 'json'): Observable<{ jobId: string; downloadUrl: string }> {
+  exportCv(sessionId: string, format: 'pdf' | 'docx' | 'pptx' | 'json'): Observable<{ jobId: string; downloadUrl: string }> {
     return this.http.post<{ jobId: string; downloadUrl: string }>(`${environment.apiBaseUrl}/export`, {
       sessionId,
       format,
@@ -96,7 +98,6 @@ export class CvApiService {
     email: string,
     phone: string,
     location: string,
-    linkedin: string,
     summary: string,
     skills: string[]
   ): Observable<ConversationResponse> {
@@ -106,7 +107,6 @@ export class CvApiService {
       email,
       phone,
       location,
-      linkedin,
       summary,
       skills,
     });

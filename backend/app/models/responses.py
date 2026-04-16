@@ -50,6 +50,7 @@ class TemplateOption(BaseResponseModel):
     description: str
     fileType: str = ""  # docx, pptx, pdf
     fileBase64: str = ""  # Base64 encoded file content
+    previewImageBase64: str = ""  # Optional: Base64 encoded preview image
 
 
 class TemplateListResponse(BaseResponseModel):

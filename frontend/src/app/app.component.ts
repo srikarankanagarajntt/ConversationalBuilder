@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, SecurityContext } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule, HttpClient } from '@angular/common/http';
+import { DomSanitizer } from '@angular/platform-browser';
 
 import { ConversationResponse, CvApiService, SessionResponse, TemplateOption, PersonalInfo } from './services/cv-api.service';
 import { environment } from '../environments/environment';
@@ -10,6 +11,11 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+}
+
+interface TemplateWithPreview extends TemplateOption {
+  previewImageUrl?: string;
+  isLoading?: boolean;
 }
 
 @Component({
@@ -38,9 +44,9 @@ export class AppComponent implements OnInit {
   showCvPreview = false;
   showTemplateModal = false;
   showPersonalInfoModal = false;
-  pendingExportFormat: 'pdf' | 'docx' | 'json' | null = null;
+  pendingExportFormat: 'pdf' | 'docx' | 'pptx' | 'json' | null = null;
   cvData: any = null;
-  templates: TemplateOption[] = [];
+  templates: TemplateWithPreview[] = [];
   selectedTemplateId: string | null = null;
 
   // Personal info form fields
@@ -48,15 +54,20 @@ export class AppComponent implements OnInit {
   personalEmail = '';
   personalPhone = '';
   personalLocation = '';
-  personalLinkedin = '';
   personalSummary = '';
   personalSkills: string[] = [];
   personalSkillsInput = '';
+  
+  // Form validation errors
+  formErrors: { [key: string]: string } = {
+    fullName: '',
+    email: ''
+  };
 
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
 
-  constructor(private readonly api: CvApiService, private readonly http: HttpClient) {}
+  constructor(private readonly api: CvApiService, private readonly http: HttpClient, private readonly sanitizer: DomSanitizer) {}
 
   ngOnInit(): void {
     this.createSessionOnLoad();
@@ -76,7 +87,7 @@ export class AppComponent implements OnInit {
         // Add an initial greeting to conversation
         this.conversationHistory.push({
           role: 'assistant',
-          content: "Hello! I'm your AI CV Assistant. Let's build your professional CV together. Tell me about yourself, your experience, skills, or what role you're applying for.",
+          content: "Hello! I'm your AI CV Assistant. Let's build your professional CV together. Upload a resume or say Hi to continue!",
           timestamp: new Date(),
         });
       },
@@ -261,7 +272,7 @@ export class AppComponent implements OnInit {
     }
   }
 
-  exportCv(format: 'pdf' | 'docx' | 'json'): void {
+  exportCv(format: 'pdf' | 'docx' | 'pptx' | 'json'): void {
     if (!this.sessionId) {
       this.errorMessage = 'No active session to export.';
       return;
@@ -378,23 +389,10 @@ export class AppComponent implements OnInit {
 
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('session_id', this.sessionId);
+    formData.append('sessionId', this.sessionId);
 
     this.http.post<any>(`${environment.apiBaseUrl}/upload/cv`, formData).subscribe({
       next: (response: any) => {
-        this.loading = false;
-        
-        // Add success message to conversation
-        const extractedInfo = response.extracted_data ? 
-          this.formatExtractedData(response.extracted_data) : 
-          'Processing your resume...';
-        
-        this.conversationHistory.push({
-          role: 'assistant',
-          content: `✅ Resume uploaded successfully!\n\n${extractedInfo}`,
-          timestamp: new Date(),
-        });
-
         // Update CV data if available
         if (response.extracted_data) {
           const header = response.extracted_data.header || {};
@@ -416,17 +414,13 @@ export class AppComponent implements OnInit {
             skills: this.extractSkillsFromTechnical(skills),
             experience: experience,
           };
+
+          // Send extracted CV data to conversation service for LLM processing
+          this.sendExtractedCvToConversation(response.extracted_data);
+        } else {
+          this.loading = false;
+          this.errorMessage = 'No data extracted from resume.';
         }
-
-        // Auto-continue conversation
-        const continuationMessage = 'Great! I\'ve extracted your resume. Now tell me what role you\'re targeting and I\'ll help enhance your CV further.';
-        this.conversationHistory.push({
-          role: 'assistant',
-          content: continuationMessage,
-          timestamp: new Date(),
-        });
-
-        this.scrollToBottom();
       },
       error: (error) => {
         this.loading = false;
@@ -444,49 +438,104 @@ export class AppComponent implements OnInit {
     });
   }
 
-  private formatExtractedData(data: any): string {
+  private sendExtractedCvToConversation(extractedData: any): void {
+    // Format extracted CV data as a structured message for the LLM
+    const cvMessage = this.formatCvDataAsMessage(extractedData);
+
+    // Add user message to conversation history
+    this.conversationHistory.push({
+      role: 'user',
+      content: `📄 Resume uploaded\n\n${cvMessage}`,
+      timestamp: new Date(),
+    });
+
+    // Send to conversation endpoint for LLM processing
+    this.api.sendMessage(this.sessionId, cvMessage).subscribe({
+      next: (res: ConversationResponse) => {
+        // Add LLM response to conversation
+        this.conversationHistory.push({
+          role: 'assistant',
+          content: res.reply,
+          timestamp: new Date(),
+        });
+
+        this.transcript = '';
+        this.missingFields = res.missingFields;
+        this.message = '';
+        this.loading = false;
+
+        // Show personal info modal if indicated
+        if (res.showPersonalInfoModal) {
+          this.showPersonalInfoModal = true;
+        }
+
+        this.scrollToBottom();
+      },
+      error: (error) => {
+        this.loading = false;
+        const errorMsg = error.error?.detail || error.error?.message || 'Failed to process resume.';
+        this.errorMessage = `Processing failed: ${errorMsg}`;
+        
+        this.conversationHistory.push({
+          role: 'assistant',
+          content: `❌ ${errorMsg}`,
+          timestamp: new Date(),
+        });
+        
+        this.scrollToBottom();
+      },
+    });
+  }
+
+  private formatCvDataAsMessage(data: any): string {
     const lines: string[] = [];
-    
+
     // Header (personal info)
     const header = data.header || {};
     if (header.fullName || header.email) {
-      lines.push('**Personal Information:**');
-      if (header.fullName) lines.push(`• Name: ${header.fullName}`);
-      if (header.email) lines.push(`• Email: ${header.email}`);
-      if (header.phone) lines.push(`• Phone: ${header.phone}`);
-      if (header.location) lines.push(`• Location: ${header.location}`);
+      lines.push('**Extracted Resume Information:**');
       lines.push('');
-    }
-
-    // Technical skills
-    const skills = data.technicalSkills || {};
-    const primarySkills = skills.primary?.map((s: any) => s.skill_name || s).slice(0, 5) || [];
-    if (primarySkills.length > 0) {
-      lines.push(`**Top Skills:** ${primarySkills.join(', ')}`);
-      lines.push('');
-    }
-
-    // Work experience
-    const experience = data.workExperience || [];
-    if (experience.length > 0) {
-      lines.push('**Recent Experience:**');
-      experience.slice(0, 2).forEach((exp: any, index: number) => {
-        lines.push(`${index + 1}. **${exp.position}** at ${exp.employer}`);
-        if (exp.project_description) {
-          lines.push(`   ${exp.project_description.substring(0, 100)}...`);
-        }
-      });
+      if (header.fullName) lines.push(`**Name:** ${header.fullName}`);
+      if (header.jobTitle) lines.push(`**Current Title:** ${header.jobTitle}`);
+      if (header.email) lines.push(`**Email:** ${header.email}`);
+      if (header.phone) lines.push(`**Phone:** ${header.phone}`);
+      if (header.location) lines.push(`**Location:** ${header.location}`);
       lines.push('');
     }
 
     // Professional summary
     const summary = data.professionalSummary || [];
     if (Array.isArray(summary) && summary.length > 0) {
-      lines.push('**Summary:**');
-      lines.push(summary.slice(0, 2).join('\n'));
+      lines.push('**Professional Summary:**');
+      summary.forEach((s: string) => lines.push(`• ${s}`));
+      lines.push('');
     }
 
-    return lines.join('\n') || 'Resume data extracted successfully.';
+    // Technical skills
+    const skills = data.technicalSkills || {};
+    const primarySkills = skills.primary || [];
+    if (primarySkills.length > 0) {
+      lines.push('**Primary Skills:** ' + primarySkills.map((s: any) => s.skill_name || s).join(', '));
+    }
+    const secondarySkills = skills.secondary || [];
+    if (secondarySkills.length > 0) {
+      lines.push('**Secondary Skills:** ' + secondarySkills.map((s: any) => s.skill_name || s).join(', '));
+      lines.push('');
+    }
+
+    // Work experience
+    const experience = data.workExperience || [];
+    if (experience.length > 0) {
+      lines.push('**Work Experience:**');
+      experience.forEach((exp: any, index: number) => {
+        lines.push(`${index + 1}. **${exp.position}** at ${exp.employer} (${exp.duration || 'N/A'})`);
+        if (exp.project_description) {
+          lines.push(`   ${exp.project_description}`);
+        }
+      });
+    }
+
+    return lines.join('\n');
   }
 
   private extractSkillsFromTechnical(technicalSkills: any): string[] {
@@ -537,6 +586,8 @@ export class AppComponent implements OnInit {
     this.api.getTemplates().subscribe({
       next: (res: any) => {
         this.templates = res.templates;
+        // Generate previews for all templates
+        this.generateTemplatePreview();
         this.showTemplateModal = true;
         this.selectedTemplateId = null;
         this.loading = false;
@@ -546,6 +597,194 @@ export class AppComponent implements OnInit {
         this.loading = false;
       },
     });
+  }
+
+  private generateTemplatePreview(): void {
+    this.templates.forEach((template: TemplateWithPreview) => {
+      template.isLoading = true;
+      
+      // First check if backend provided a preview image
+      if (template.previewImageUrl) {
+        template.isLoading = false;
+        return;
+      }
+      
+      if (template.previewImageBase64) {
+        try {
+          template.previewImageUrl = `data:image/png;base64,${template.previewImageBase64}`;
+          template.isLoading = false;
+          return;
+        } catch (error) {
+          console.error('Error processing preview image:', error);
+        }
+      }
+      
+      // Fallback: Generate preview from template file
+      if (template.fileBase64) {
+        try {
+          const byteCharacters = atob(template.fileBase64);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: this.getMimeType(template.fileType) });
+
+          // Generate preview based on file type
+          if (template.fileType === 'docx') {
+            this.generateDocxPreview(blob, template);
+          } else if (template.fileType === 'pptx') {
+            this.generatePptxPreview(blob, template);
+          } else {
+            this.setDefaultPreview(template);
+          }
+        } catch (error) {
+          console.error('Error generating preview:', error);
+          this.setDefaultPreview(template);
+        }
+      } else {
+        this.setDefaultPreview(template);
+      }
+    });
+  }
+
+  private getMimeType(fileType: string): string {
+    const mimeTypes: { [key: string]: string } = {
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    };
+    return mimeTypes[fileType] || 'application/octet-stream';
+  }
+
+  private generateDocxPreview(blob: Blob, template: TemplateWithPreview): void {
+    // Use a temporary div to render the docx preview
+    const tempDiv = document.createElement('div');
+    tempDiv.style.width = '100%';
+    tempDiv.style.height = '300px';
+    tempDiv.style.overflow = 'hidden';
+
+    // Import docx-preview dynamically
+    import('docx-preview').then((module) => {
+      module.renderAsync(blob, tempDiv).then(() => {
+        // Convert the rendered content to a canvas and then to an image
+        this.convertDivToImage(tempDiv, template);
+      }).catch((error) => {
+        console.error('Error rendering docx:', error);
+        this.setDefaultPreview(template);
+      });
+    }).catch(() => {
+      this.setDefaultPreview(template);
+    });
+  }
+
+  private convertDivToImage(element: HTMLElement, template: TemplateWithPreview): void {
+    try {
+      // Use html2canvas if available, otherwise use a canvas approach
+      const canvas = document.createElement('canvas');
+      canvas.width = 280;
+      canvas.height = 300;
+      const ctx = canvas.getContext('2d');
+      
+      if (ctx) {
+        // Create a gradient background to simulate document preview
+        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, '#f5f5f5');
+        gradient.addColorStop(1, '#e8e8e8');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 280, 300);
+
+        // Add border
+        ctx.strokeStyle = '#ccc';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0, 0, 280, 300);
+
+        // Add text
+        ctx.fillStyle = '#333';
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText('DOCX Preview', 10, 30);
+        ctx.font = '12px Arial';
+        ctx.fillText(template.templateName, 10, 50);
+        
+        template.previewImageUrl = canvas.toDataURL('image/png');
+      }
+      template.isLoading = false;
+    } catch (error) {
+      console.error('Error converting to image:', error);
+      this.setDefaultPreview(template);
+    }
+  }
+
+  private generatePptxPreview(blob: Blob, template: TemplateWithPreview): void {
+    // For PPTX, create a simple preview since we need a library to properly extract slides
+    const canvas = document.createElement('canvas');
+    canvas.width = 280;
+    canvas.height = 300;
+    const ctx = canvas.getContext('2d');
+    
+    if (ctx) {
+      // Create a gradient background
+      const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+      gradient.addColorStop(0, '#e8f5e9');
+      gradient.addColorStop(1, '#c8e6c9');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 280, 300);
+
+      // Add border
+      ctx.strokeStyle = '#66bb6a';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(0, 0, 280, 300);
+
+      // Add presentation icon and text
+      ctx.fillStyle = '#333';
+      ctx.font = 'bold 14px Arial';
+      ctx.fillText('PPTX Preview', 10, 30);
+      ctx.font = '12px Arial';
+      ctx.fillText(template.templateName, 10, 50);
+      ctx.fillText('Presentation File', 10, 80);
+      
+      // Draw slides indicator
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(10, 100, 120, 80);
+      ctx.fillRect(150, 100, 120, 80);
+      
+      ctx.fillStyle = '#66bb6a';
+      ctx.font = '10px Arial';
+      ctx.fillText('Slide 1', 50, 145);
+      ctx.fillText('Slide 2', 190, 145);
+
+      template.previewImageUrl = canvas.toDataURL('image/png');
+    }
+    template.isLoading = false;
+  }
+
+  private setDefaultPreview(template: TemplateWithPreview): void {
+    // Create a default preview canvas
+    const canvas = document.createElement('canvas');
+    canvas.width = 280;
+    canvas.height = 300;
+    const ctx = canvas.getContext('2d');
+    
+    if (ctx) {
+      const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+      gradient.addColorStop(0, '#f0f0f0');
+      gradient.addColorStop(1, '#d9d9d9');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 280, 300);
+
+      ctx.strokeStyle = '#999';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(0, 0, 280, 300);
+
+      ctx.fillStyle = '#666';
+      ctx.font = 'bold 14px Arial';
+      ctx.fillText('Template Preview', 10, 30);
+      ctx.font = '12px Arial';
+      ctx.fillText(template.templateName, 10, 50);
+      ctx.fillText(template.fileType.toUpperCase(), 10, 70);
+
+      template.previewImageUrl = canvas.toDataURL('image/png');
+    }
+    template.isLoading = false;
   }
 
   selectTemplate(): void {
@@ -592,8 +831,26 @@ export class AppComponent implements OnInit {
   }
 
   submitPersonalInfo(): void {
-    if (!this.sessionId || !this.personalFullName.trim() || !this.personalEmail.trim()) {
-      this.errorMessage = 'Please fill in at least name and email.';
+    // Clear previous errors
+    this.formErrors = { fullName: '', email: '' };
+    
+    // Validate form
+    let isValid = true;
+    
+    if (!this.personalFullName.trim()) {
+      this.formErrors.fullName = 'Full name is required';
+      isValid = false;
+    }
+    
+    if (!this.personalEmail.trim()) {
+      this.formErrors.email = 'Email is required';
+      isValid = false;
+    } else if (!this.isValidEmail(this.personalEmail)) {
+      this.formErrors.email = 'Please enter a valid email address';
+      isValid = false;
+    }
+    
+    if (!isValid) {
       return;
     }
 
@@ -605,7 +862,6 @@ export class AppComponent implements OnInit {
       this.personalEmail,
       this.personalPhone,
       this.personalLocation,
-      this.personalLinkedin,
       this.personalSummary,
       this.personalSkills
     ).subscribe({
@@ -625,10 +881,10 @@ export class AppComponent implements OnInit {
         this.personalEmail = '';
         this.personalPhone = '';
         this.personalLocation = '';
-        this.personalLinkedin = '';
         this.personalSummary = '';
         this.personalSkills = [];
         this.personalSkillsInput = '';
+        this.formErrors = { fullName: '', email: '' };
         
         this.loading = false;
       },
@@ -637,6 +893,21 @@ export class AppComponent implements OnInit {
         this.loading = false;
       },
     });
+  }
+
+  validateEmail(): void {
+    if (!this.personalEmail.trim()) {
+      this.formErrors.email = 'Email is required';
+    } else if (!this.isValidEmail(this.personalEmail)) {
+      this.formErrors.email = 'Please enter a valid email address';
+    } else {
+      this.formErrors.email = '';
+    }
+  }
+
+  private isValidEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   }
 
   closePersonalInfoModal(): void {

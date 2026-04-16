@@ -109,7 +109,6 @@ class ConversationService:
         email: str,
         phone: str,
         location: str,
-        linkedin: str,
         summary: str,
         skills: list,
     ) -> ConversationResponse:
@@ -128,7 +127,6 @@ class ConversationService:
                 "email": email,
                 "phone": phone,
                 "location": location,
-                "linkedin": linkedin,
                 "summary": summary,
             },
             "skills": skills,

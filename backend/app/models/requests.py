@@ -20,7 +20,6 @@ class PersonalInfoRequest(BaseModel):
     email: str
     phone: str
     location: str
-    linkedin: str = ""
     summary: str = ""
     skills: List[str] = Field(default_factory=list)
 
@@ -37,5 +36,5 @@ class PreviewEditRequest(BaseModel):
 
 class ExportRequest(BaseModel):
     sessionId: str
-    format: str = Field("pdf", pattern="^(pdf|docx|json)$")
+    format: str = Field("pdf", pattern="^(pdf|docx|pptx|json)$")
     templateId: str = Field("ntt-classic", description="Template ID for DOCX export")

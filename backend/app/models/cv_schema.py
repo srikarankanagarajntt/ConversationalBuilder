@@ -19,7 +19,6 @@ class PersonalInfo(BaseSchemaModel):
     email: str = ""
     phone: str = ""
     location: str = ""
-    linkedin: str = ""
     summary: str = ""
 
 
