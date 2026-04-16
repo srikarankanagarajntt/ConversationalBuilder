@@ -1,0 +1,76 @@
+<div class="container-fluid vh-100 d-flex flex-column">
+
+    <!-- Header -->
+    <div class="py-3 text-center border-bottom">
+        <h5 class="m-0">AI Resume Builder</h5>
+    </div>
+
+    <!-- Content -->
+    <div class="flex-grow-1 d-flex align-items-center">
+
+        <div class="container">
+            <div class="row align-items-center">
+
+                <!-- LEFT SECTION -->
+                <div class="col-md-6">
+
+                    <h2 class="mb-4">
+                        Create Your Resume in <br />
+                        Three Simple Steps
+                    </h2>
+
+                    <!-- Step 1 -->
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="step-circle me-3">1</div>
+                        <p class="mb-0">
+                            Select a template from our library of professional designs
+                        </p>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="step-circle me-3">2</div>
+                        <p class="mb-0">
+                            Build your resume with AI-powered suggestions
+                        </p>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="d-flex align-items-start mb-4">
+                        <div class="step-circle me-3">3</div>
+                        <p class="mb-0">
+                            Download and start applying instantly
+                        </p>
+                    </div>
+
+                    <!-- CTA -->
+                    <button class="btn btn-primary px-4 py-2" (click)="startFlow()">
+                        Start Now
+                    </button>
+
+                </div>
+
+                <div class="col-md-6">
+                    <div class="d-flex gap-3 overflow-auto px-2" style="scroll-behavior: smooth;">
+
+                        <div class="card p-2 text-center flex-shrink-0" style="width: 200px; cursor:pointer"
+                            *ngFor="let t of templates" [class.border-primary]="selectedTemplate===t"
+                            (click)="selectTemplate(t)">
+
+                            <div class="bg-secondary" style="height: 150px;"></div>
+
+                            <div class="mt-2">
+                                <input type="radio" name="template" [checked]="selectedTemplate===t" />
+                                <span class="ms-1">{{t.name}}</span>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>a

@@ -1,0 +1,40 @@
+<div class="flex-grow-1 d-flex flex-column bg-light">
+
+    <!-- Heading -->
+    <div class="text-center mt-4 mb-3">
+        <h3>Select a template for your resume</h3>
+        <p class="text-muted">You can always change your template later.</p>
+    </div>
+
+    <!-- Templates Grid (No Filters) -->
+    <div class="container flex-grow-1">
+        <div class="row justify-content-center">
+
+            <div class="col-md-3 mb-4" *ngFor="let t of templates; let i = index">
+                <div class="card h-100 shadow-sm" style="cursor:pointer" 
+                    (click)="selectTemplate(t)" [ngStyle]="{ 'border' : selected.name==t.name ? '2px solid #0d6efd' : '1px solid #dee2e6' }">
+
+                    <div *ngIf="i === 0" class="position-absolute top-0 start-0 m-2">
+                        <span class="badge bg-primary">Default</span>
+                    </div>
+
+                    <div class="bg-secondary" style="height:465px;"></div>
+
+                    <div class="p-2 text-center">
+                        <p class="mb-1 fw-semibold">{{t.name}}</p>
+                        <span class="badge bg-light text-dark"></span>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Bottom Actions -->
+    <div class="border-top p-3 d-flex justify-content-end gap-2">
+        <!-- <button class="btn btn-outline-secondary" (click)="goToUserInfo()">Choose later</button> -->
+        <button class="btn btn-primary" [disabled]="!selected" (click)="goToImportScreen()">Use this template</button>
+    </div>
+
+</div>

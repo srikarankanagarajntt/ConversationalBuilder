@@ -4,6 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ResumePreviewerComponent } from '../resume-previewer/resume-previewer.component';
 import { TemplateChooserComponent } from '../template-chooser/template-chooser.component';
+import { ChatbotService } from '../../services/chatbot.service';
+import { ConversationMessageRequest } from '../../models/ConversationMessageRequest';
+import { ConversationMessageResponse } from '../../models/ConversationMessageResponse';
 
 @Component({
   selector: 'app-chatbot',
@@ -28,7 +31,7 @@ export class ChatbotComponent {
 
   @Output() newMessageAdded: EventEmitter<void> = new EventEmitter()
 
-  constructor(private cdr: ChangeDetectorRef) { }
+  constructor(private cdr: ChangeDetectorRef, private chatbotService: ChatbotService) { }
 
   selectTemplate(t: any) {
     this.selected = t;
@@ -38,7 +41,7 @@ export class ChatbotComponent {
     this.showTemplate = false;
 
     setTimeout(() => {
-      this.showPreview = true;
+      //this.showPreview = true;
     }, 800);
   }
 
@@ -47,6 +50,25 @@ export class ChatbotComponent {
     this.messages.push({ type: 'sender', text: this.input });
     this.input = '';
 
+    const messageToSend = this.messages[this.messages.length - 1].text;
+    const conversationMessageRequest: ConversationMessageRequest = {
+      sessionId: JSON.parse(sessionStorage.getItem('sessionId') || '{}'),
+      message: messageToSend,
+      language: 'en'
+    }
+
+    // this.chatbotService.conversationSendMessage(conversationMessageRequest).subscribe({
+    //   next: (response: ConversationMessageResponse) => {
+    //     this.messages.push({ type: 'receiver', text: response.assistantMessage });
+    //     setTimeout(() => {
+    //       this.messageArea.nativeElement.scrollTop = this.messageArea.nativeElement.scrollHeight;
+    //     }, 10);
+    //   },
+    //   error: (error) => {
+    //     console.error('Error sending message:', error);
+    //   }
+    // });
+
     // simulate backends
     setTimeout(() => {
       this.messages.push({ type: 'receiver', text: 'Got it! Please wait while I process...' });
@@ -54,7 +76,6 @@ export class ChatbotComponent {
         this.messageArea.nativeElement.scrollTop = this.messageArea.nativeElement.scrollHeight
       }, 100);
     }, 500);
-
   }
 
   onFileUpload(event: any) {
@@ -124,5 +145,9 @@ export class ChatbotComponent {
     this.showPreview = false;
     this.selected = null;
     this.messages = [];
+  }
+
+  preview(){
+    this.showPreview = true;
   }
 }

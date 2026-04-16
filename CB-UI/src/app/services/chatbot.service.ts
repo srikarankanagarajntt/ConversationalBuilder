@@ -1,20 +1,23 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { API_URLS } from '../constants/api_urls';
 import { Observable } from 'rxjs';
-import { SessionCreate } from '../models/SessionCreate';
-import { Session } from '../models/Session';
+
+import { API_URLS } from '../constants/api_urls';
+
 import { ConversationMessageRequest } from '../models/ConversationMessageRequest';
 import { ConversationMessageResponse } from '../models/ConversationMessageResponse';
-import { VoiceTranscribeResponse } from '../models/VoiceTranscribeResponse';
-import { VoiceMessageResponse } from '../models/VoiceMessageReponse';
+import { ExportRequest } from '../models/ExportRequest';
+import { ExportResponse } from '../models/ExportResponse';
+import { PreviewResponse } from '../models/PreviewResponse';
+import { PreviewUpdate } from '../models/PreviewUpdate';
+import { Session } from '../models/Session';
+import { SessionCreateRequest } from '../models/SessionCreateRequest';
+import { SessionCreateResponse } from '../models/SessionCreateResponse';
 import { Template } from '../models/Template';
 import { TemplateSelectRequest } from '../models/TemplateSelectRequest';
 import { TemplateSelectResponse } from '../models/TemplateSelectResponse';
-import { PreviewResponse } from '../models/PreviewResponse';
-import { PreviewUpdate } from '../models/PreviewUpdate';
-import { ExportRequest } from '../models/ExportRequest';
-import { ExportResponse } from '../models/ExportResponse';
+import { VoiceTranscribeResponse } from '../models/VoiceTranscribeResponse';
+import { VoiceMessageResponse } from '../models/VoiceMessageReponse';
 
 @Injectable({
   providedIn: 'root'
@@ -24,11 +27,8 @@ export class ChatbotService {
   constructor(private http: HttpClient) { }
 
   // Session Management
-  sessionCreate(): Observable<Session> {
-    const sessionData: SessionCreate = {
-      language: 'en'
-    };
-    return this.http.post<Session>(API_URLS.SESSION.CREATE_SESSION, sessionData);
+  sessionCreate(sessionCreateRequest: SessionCreateRequest): Observable<SessionCreateResponse> {
+    return this.http.post<SessionCreateResponse>(API_URLS.SESSION.CREATE_SESSION, sessionCreateRequest);
   }
 
   sessionGet(sessionId: string): Observable<Session> {

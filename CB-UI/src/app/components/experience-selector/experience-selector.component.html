@@ -1,0 +1,238 @@
+<!-- SCREEN 2: EXPERIENCE -->
+
+<div class="flex-grow-1 d-flex flex-column justify-content-center align-items-center bg-light">
+    <div class="text-center mb-4">
+        <h3>What's your experience level?</h3>
+        <p class="text-muted">Select one or enter manually</p>
+    </div>
+
+
+
+    <div class="d-flex flex-wrap gap-3 justify-content-center mb-4" style="max-width: 500px;">
+        <div class="card p-3 text-center" style="width: 120px; cursor:pointer" *ngFor="let exp of experienceOptions"
+            [class.border-primary]="selectedExperience === exp" (click)="selectExperience(exp)">
+            {{exp}}
+        </div>
+    </div>
+
+
+
+    <div class="w-50 mb-3">
+        <input [(ngModel)]="customExperience" class="form-control"
+            placeholder="Or type your experience (e.g. 5 years)" />
+    </div>
+
+    <button class="btn btn-primary" (click)="goToTemplateSelectionPage()">Next</button>
+</div>
+
+
+
+
+
+<!-- SCREEN 3: USER INFO -->
+
+<!-- <div *ngIf="currentScreen === 'userInfo'" class="flex-grow-1 d-flex justify-content-center align-items-center bg-light">
+
+
+
+ <div class="bg-white p-4 shadow rounded" style="width: 700px;">
+
+
+
+ <h4 class="mb-3">Contact Information</h4>
+
+
+
+ <div class="row">
+
+
+
+ <div class="col-md-6 mb-3">
+
+        <label>First Name</label>
+
+        <input class="form-control" [(ngModel)]="user.firstName" />
+
+ </div>
+
+
+
+ <div class="col-md-6 mb-3">
+
+        <label>Surname</label>
+
+        <input class="form-control" [(ngModel)]="user.lastName" />
+
+ </div>
+
+
+
+ <div class="col-md-6 mb-3">
+
+        <label>City</label>
+
+        <input class="form-control" [(ngModel)]="user.city" />
+
+ </div>
+
+
+
+ <div class="col-md-6 mb-3">
+
+        <label>Country</label>
+
+        <input class="form-control" [(ngModel)]="user.country" />
+
+ </div>
+
+
+
+ <div class="col-md-6 mb-3">
+
+        <label>Pin Code</label>
+
+        <input class="form-control" [(ngModel)]="user.pin" />
+
+ </div>
+
+
+
+ <div class="col-md-6 mb-3">
+
+        <label>Phone</label>
+
+        <input class="form-control" [(ngModel)]="user.phone" />
+
+ </div>
+
+
+
+ <div class="col-12 mb-3">
+
+        <label>Email</label>
+
+        <input class="form-control" [(ngModel)]="user.email" />
+
+ </div>
+
+
+
+ </div>
+
+
+
+ <div class="text-end">
+
+ <button class="btn btn-primary" (click)="goToChat()">Continue</button>
+
+ </div>
+
+
+
+ </div>
+
+
+
+</div> -->
+
+
+
+
+
+<!-- CHAT SCREEN (unchanged) -->
+
+<!-- <div *ngIf="currentScreen === 'chat'" class="flex-grow-1 d-flex flex-column" [ngClass]="{'justify-content-center align-items-center': messages.length === 0}">
+
+
+
+ <h3 class="mb-4" *ngIf="messages.length === 0">Build your resume with AI</h3>
+
+
+
+ <div class="flex-grow-1 w-100 px-4 overflow-auto" *ngIf="messages.length > 0">
+
+ <div class="mx-auto" style="max-width: 700px;">
+
+ <div *ngFor="let msg of messages" class="mb-2 d-flex"
+
+           [ngClass]="{'justify-content-end': msg.type === 'sender', 'justify-content-start': msg.type === 'receiver'}">
+
+
+
+        <div
+
+          class="p-2 rounded"
+
+          [ngClass]="{
+
+            'bg-primary text-white': msg.type === 'sender',
+
+            'bg-white border': msg.type === 'receiver'
+
+          }"
+
+          [ngStyle]="msg.type === 'sender' ? {'width': '300px'} : {}">
+
+          {{msg.text}}
+
+        </div>
+
+
+
+ </div>
+
+ </div>
+
+ </div>
+
+
+
+ <div class="w-100 p-3" [ngClass]="{'d-flex justify-content-center': messages.length === 0}">
+
+ <div class="d-flex gap-2 w-100" style="max-width: 700px;">
+
+
+
+ <div class="dropdown">
+
+        <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">+</button>
+
+        <ul class="dropdown-menu">
+
+          <li>
+
+            <a class="dropdown-item" (click)="fileInput.click()">Upload File</a>
+
+          </li>
+
+          <li>
+
+            <a class="dropdown-item" (click)="openTemplateChooser()">Choose Template</a>
+
+          </li>
+
+        </ul>
+
+ </div>
+
+
+
+ <input type="file" #fileInput hidden (change)="onFileUpload($event)" />
+
+
+
+ <input [(ngModel)]="input" class="form-control" placeholder="Tell me about yourself or upload your resume..." />
+
+
+
+ <button class="btn btn-outline-secondary">🎤</button>
+
+ <button class="btn btn-primary" (click)="send()">Send</button>
+
+ </div>
+
+ </div>
+
+
+
+</div> -->

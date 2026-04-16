@@ -12,6 +12,10 @@ export class ResumePreviewerComponent {
  showPreview = false;
  @Output() resetTemplate: EventEmitter<void> = new EventEmitter<void>;
 
+ constructor() { 
+  console.log('ResumePreviewerComponent initialized');
+ }
+
  reset() {
   this.resetTemplate.emit()
  }

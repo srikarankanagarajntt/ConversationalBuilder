@@ -37,6 +37,11 @@
                             📲 Choose Template
                         </a>
                     </li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-left gap-2" (click)="preview()">
+                            📄 Preview
+                        </a>
+                    </li>
                 </ul>
             </div>
 
@@ -57,4 +62,4 @@
 <app-template-chooser [showTemplate]="showTemplate" (confirmTemplate)="confirmTemplate($event)"></app-template-chooser>
 
 <!-- Resume Preview Screen -->
-<app-resume-previewer (resetTemplate)="reset()"></app-resume-previewer>
+<app-resume-previewer *ngIf="showPreview" (resetTemplate)="reset()"></app-resume-previewer>

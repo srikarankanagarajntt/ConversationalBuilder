@@ -1,0 +1,54 @@
+<div class="vh-100 d-flex">
+<div class="flex-grow-1 d-flex justify-content-center align-items-center bg-light">
+ 
+  <div class="bg-white p-4 shadow rounded" style="width: 700px;">
+ 
+    <h4 class="mb-3">Contact Information</h4>
+ 
+    <div class="row">
+ 
+      <div class="col-md-6 mb-3">
+        <label>First Name</label>
+        <input class="form-control" [(ngModel)]="user.firstName" />
+      </div>
+ 
+      <div class="col-md-6 mb-3">
+        <label>Surname</label>
+        <input class="form-control" [(ngModel)]="user.lastName" />
+      </div>
+ 
+      <div class="col-md-6 mb-3">
+        <label>City</label>
+        <input class="form-control" [(ngModel)]="user.city" />
+      </div>
+ 
+      <div class="col-md-6 mb-3">
+        <label>Country</label>
+        <input class="form-control" [(ngModel)]="user.country" />
+      </div>
+ 
+      <div class="col-md-6 mb-3">
+        <label>Pin Code</label>
+        <input class="form-control" [(ngModel)]="user.pin" />
+      </div>
+ 
+      <div class="col-md-6 mb-3">
+        <label>Phone</label>
+        <input class="form-control" [(ngModel)]="user.phone" />
+      </div>
+ 
+      <div class="col-12 mb-3">
+        <label>Email</label>
+        <input class="form-control" [(ngModel)]="user.email" />
+      </div>
+ 
+    </div>
+ 
+    <div class="text-end">
+      <button class="btn btn-primary" (click)="goToChat()">Continue</button>
+    </div>
+ 
+  </div>
+ 
+</div>
+</div>
