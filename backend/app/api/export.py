@@ -19,9 +19,9 @@ export_service = ExportService()
 async def request_export(
     body: ExportRequest,
 ):
-    """Kick off a CV export job.  Returns a job ID to poll for completion."""
+    """Kick off a CV export job. Returns a job ID to poll for completion."""
     session = state_service.get_session(body.sessionId)
-    job = await export_service.create_export_job(session.cvDraft, body.format, body.templateId)
+    job = await export_service.create_export_job(session.cvDraft, body.format, body.templateId, body.language)
     return ExportJobResponse(
         jobId=job["jobId"],
         sessionId=body.sessionId,

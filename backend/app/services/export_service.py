@@ -11,6 +11,7 @@ from typing import Any, Dict, Tuple
 from fastapi import HTTPException, status
 
 from app.models.cv_schema import CvSchema
+from app.services.translation_service import TranslationService
 
 # In-memory job store — keyed by job_id
 _jobs: Dict[str, Dict[str, Any]] = {}
@@ -25,10 +26,21 @@ MASTER_TEMPLATE = os.path.join(TEMPLATE_DIR, "NTT_DATA_Master_Templates.docx")
 
 
 class ExportService:
-    async def create_export_job(self, cv: CvSchema, fmt: str, template_id: str = "ntt-classic") -> Dict[str, Any]:
+    def __init__(self):
+        self.translation_service = TranslationService()
+    
+    async def create_export_job(self, cv: CvSchema, fmt: str, template_id: str = "ntt-classic", language: str = "en") -> Dict[str, Any]:
         """Generate the file synchronously (POC) and store the job record."""
         job_id = str(uuid.uuid4())
         file_id = str(uuid.uuid4())
+        
+        # Translate CV if needed
+        if language and language != "en":
+            try:
+                cv = self.translation_service.translate_cv(cv, language)
+            except Exception as e:
+                # Log but continue with original CV if translation fails
+                print(f"Translation failed: {e}")
 
         try:
             if fmt == "json":
@@ -169,20 +181,58 @@ class ExportService:
                 detail=f"Master template not found: {MASTER_TEMPLATE}"
             )
 
-        # Load template
-        doc = DocxTemplate(MASTER_TEMPLATE)
+        try:
+            # Load template
+            doc = DocxTemplate(MASTER_TEMPLATE)
 
-        # Prepare context for Jinja2 rendering
-        context = self._prepare_template_context(cv)
+            # Prepare context for Jinja2 rendering
+            context = self._prepare_template_context(cv)
+            
+            # Ensure all strings in context are properly encoded for DOCX
+            context = self._sanitize_context_for_docx(context)
 
-        # Render template
-        doc.render(context)
+            # Render template
+            doc.render(context)
 
-        # Save to temporary file
-        temp_file = os.path.join(tempfile.gettempdir(), f"rendered_{uuid.uuid4()}.docx")
-        doc.save(temp_file)
+            # Save to temporary file
+            temp_file = os.path.join(tempfile.gettempdir(), f"rendered_{uuid.uuid4()}.docx")
+            doc.save(temp_file)
 
-        return temp_file
+            return temp_file
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"DOCX rendering failed: {str(e)}"
+            )
+
+    def _sanitize_context_for_docx(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        """Sanitize context values to ensure proper DOCX encoding."""
+        sanitized = {}
+        for key, value in context.items():
+            if isinstance(value, str):
+                # Ensure UTF-8 encoding and remove any null characters
+                try:
+                    # Clean up any problematic characters
+                    cleaned = value.replace('\x00', '').replace('\r\n', '\n')
+                    # Ensure it can be encoded to UTF-8
+                    cleaned.encode('utf-8')
+                    sanitized[key] = cleaned
+                except (UnicodeEncodeError, AttributeError):
+                    # Fallback to removing problematic chars
+                    sanitized[key] = value.encode('utf-8', errors='ignore').decode('utf-8')
+            elif isinstance(value, list):
+                # Recursively sanitize list items
+                sanitized[key] = [
+                    self._sanitize_context_for_docx(item) if isinstance(item, dict)
+                    else (item.encode('utf-8', errors='ignore').decode('utf-8') if isinstance(item, str) else item)
+                    for item in value
+                ]
+            elif isinstance(value, dict):
+                # Recursively sanitize nested dictionaries
+                sanitized[key] = self._sanitize_context_for_docx(value)
+            else:
+                sanitized[key] = value
+        return sanitized
 
     def _prepare_template_context(self, cv: CvSchema) -> Dict[str, Any]:
         """Prepare CV data for Jinja2 template rendering."""
@@ -193,7 +243,6 @@ class ExportService:
             "email": cv.personalInfo.email or "",
             "phone": cv.personalInfo.phone or "",
             "location": cv.personalInfo.location or "",
-            "linkedin": cv.personalInfo.linkedin or "",
             "summary": cv.personalInfo.summary or "",
 
             # Skills
