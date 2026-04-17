@@ -38,3 +38,4 @@ class ExportRequest(BaseModel):
     sessionId: str
     format: str = Field("pdf", pattern="^(pdf|docx|pptx|json)$")
     templateId: str = Field("ntt-classic", description="Template ID for DOCX export")
+    language: str = Field("en", pattern="^(en|de)$", description="Language code for CV (en=English, de=German)")

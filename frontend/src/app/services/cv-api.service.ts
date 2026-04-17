@@ -64,10 +64,11 @@ export class CvApiService {
     return this.http.post<ConversationResponse>(`${environment.apiBaseUrl}/voice/message`, form);
   }
 
-  exportCv(sessionId: string, format: 'pdf' | 'docx' | 'pptx' | 'json'): Observable<{ jobId: string; downloadUrl: string }> {
+  exportCv(sessionId: string, format: 'pdf' | 'docx' | 'pptx' | 'json', language: string = 'en'): Observable<{ jobId: string; downloadUrl: string }> {
     return this.http.post<{ jobId: string; downloadUrl: string }>(`${environment.apiBaseUrl}/export`, {
       sessionId,
       format,
+      language,
     });
   }
 
