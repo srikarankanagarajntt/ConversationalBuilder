@@ -204,9 +204,15 @@
     <div class="preview-container">
       <div class="preview-header">
         <h2>CV Preview</h2>
-        <button class="close-btn" (click)="closeCvPreview()">×</button>
+        <div class="preview-header-end">
+          <select (change)="onLanguageChange($event)">
+            <option value="english">English</option>
+            <option value="germany">Germany</option>
+          </select>
+          <button class="close-btn" (click)="closeCvPreview()">×</button>
+        </div>
       </div>
-
+  
       <div class="preview-content">
         <!-- Personal Info -->
         <div *ngIf="cvData?.personalInfo" class="preview-section">
@@ -216,7 +222,7 @@
           <p *ngIf="cvData.personalInfo.location" class="contact-info">📍 {{ cvData.personalInfo.location }}</p>
           <p *ngIf="cvData.personalInfo.summary" class="summary">{{ cvData.personalInfo.summary }}</p>
         </div>
-
+  
         <!-- Skills -->
         <div *ngIf="cvData?.skills && cvData.skills.length > 0" class="preview-section">
           <h4>Skills</h4>
@@ -224,7 +230,7 @@
             <span *ngFor="let skill of cvData.skills" class="skill-tag">{{ skill }}</span>
           </div>
         </div>
-
+  
         <!-- Experience -->
         <div *ngIf="cvData?.experience && cvData.experience.length > 0" class="preview-section">
           <h4>Experience</h4>
@@ -238,7 +244,7 @@
             </ul>
           </div>
         </div>
-
+  
         <!-- Eduaction -->
         <div *ngIf="cvData?.education && cvData.education.length > 0" class="preview-section">
           <h4>Education</h4>
@@ -248,7 +254,7 @@
             <div class="year">{{ edu.endDate }}</div>
           </div>
         </div>
-
+  
         <!-- Projects -->
         <div *ngIf="cvData?.projects && cvData.projects.length > 0" class="preview-section">
           <h4>Projects</h4>
@@ -260,7 +266,7 @@
             </div>
           </div>
         </div>
-
+  
         <!-- Certifications -->
         <div *ngIf="cvData?.certifications && cvData.certifications.length > 0" class="preview-section">
           <h4>Certifications</h4>
@@ -268,7 +274,7 @@
             <strong>{{ cert.name }}</strong> - {{ cert.issuer }} ({{ cert.date }})
           </div>
         </div>
-
+  
         <!-- Languages -->
         <div *ngIf="cvData?.languages && cvData.languages.length > 0" class="preview-section">
           <h4>Languages</h4>
@@ -277,7 +283,7 @@
           </div>
         </div>
       </div>
-
+  
       <div class="preview-actions">
         <button (click)="closeCvPreview()" class="btn-secondary">Back</button>
         <button (click)="downloadCv()" [disabled]="loading" class="btn-primary">
@@ -371,30 +377,31 @@
         <!-- Personal Details Row 2 -->
         <div class="form-row">
           <div class="form-group">
-            <label>Phone</label>
-            <input [(ngModel)]="personalPhone" type="tel" placeholder="+1 (555) 123-4567" class="form-input">
+            <label>Phone <span class="required">*</span></label>
+            <input [(ngModel)]="personalPhone" type="tel" placeholder="+1 (555) 123-4567" class="form-input" [class.input-error]="formErrors.phone">
           </div>
           <div class="form-group">
-            <label>Location</label>
-            <input [(ngModel)]="personalLocation" type="text" placeholder="New York, USA" class="form-input">
+            <label>Location <span class="required">*</span></label>
+            <input [(ngModel)]="personalLocation" type="text" placeholder="New York, USA" class="form-input" [class.input-error]="formErrors.location">
           </div>
         </div>
 
         <!-- Summary -->
         <div class="form-group">
-          <label>Professional Summary</label>
-          <textarea [(ngModel)]="personalSummary" rows="3" placeholder="Brief overview of your career and goals..." class="form-textarea"></textarea>
+          <label>Professional Summary <span class="required">*</span></label>
+          <textarea [(ngModel)]="personalSummary" rows="3" placeholder="Brief overview of your career and goals..." class="form-textarea" [class.input-error]="formErrors.summary"></textarea>
         </div>
 
         <!-- Skills -->
         <div class="form-group">
-          <label>Skills</label>
+          <label>Skills <span class="required">*</span></label>
           <div class="skills-input-container">
             <input [(ngModel)]="personalSkillsInput" 
                    (keyup.enter)="addSkill()"
                    type="text" 
                    placeholder="Type a skill and press Enter" 
-                   class="form-input">
+                   class="form-input"
+                   [class.input-error]="formErrors.skills">
             <button (click)="addSkill()" class="btn-add-skill">Add</button>
           </div>
           <div class="skills-list-display">
@@ -408,7 +415,7 @@
       <div class="modal-footer">
         <button (click)="closePersonalInfoModal()" class="btn-secondary">Cancel</button>
         <button (click)="submitPersonalInfo()" 
-                [disabled]="loading || !personalFullName.trim() || !personalEmail.trim() || formErrors.email !== ''" 
+                [disabled]="loading || !isPersonalInfoFormValid()" 
                 class="btn-primary">
           {{ loading ? 'Saving...' : 'Continue' }}
         </button>

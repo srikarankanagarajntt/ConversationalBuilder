@@ -61,7 +61,11 @@ export class AppComponent implements OnInit {
   // Form validation errors
   formErrors: { [key: string]: string } = {
     fullName: '',
-    email: ''
+    email: '',
+    phone: '',
+    location: '',
+    summary: '',
+    skills: '',
   };
 
   private mediaRecorder: MediaRecorder | null = null;
@@ -99,11 +103,12 @@ export class AppComponent implements OnInit {
   }
 
   sendMessage(): void {
-    if (!this.sessionId || !this.message.trim()) {
+    const userMessage = this.message.trim();
+    this.message = ''; // Clear input immediately for better UX
+    if (!this.sessionId || !userMessage.trim()) {
       return;
     }
 
-    const userMessage = this.message.trim();
     // Add user message to conversation
     this.conversationHistory.push({
       role: 'user',
@@ -125,7 +130,7 @@ export class AppComponent implements OnInit {
         this.transcript = '';
         this.missingFields = res.missingFields;
         this.cvData = (res as any).cvDraft || null;
-        this.message = '';
+       // this.message = '';
         
         // Show personal info modal if indicated
         if (res.showPersonalInfoModal) {
@@ -668,7 +673,7 @@ export class AppComponent implements OnInit {
       module.renderAsync(blob, tempDiv).then(() => {
         // Convert the rendered content to a canvas and then to an image
         this.convertDivToImage(tempDiv, template);
-      }).catch((error) => {
+      }).catch((error: any) => {
         console.error('Error rendering docx:', error);
         this.setDefaultPreview(template);
       });
@@ -832,7 +837,7 @@ export class AppComponent implements OnInit {
 
   submitPersonalInfo(): void {
     // Clear previous errors
-    this.formErrors = { fullName: '', email: '' };
+    this.formErrors = { fullName: '', email: '', phone: '', location: '', summary: '', skills: '' };
     
     // Validate form
     let isValid = true;
@@ -847,6 +852,26 @@ export class AppComponent implements OnInit {
       isValid = false;
     } else if (!this.isValidEmail(this.personalEmail)) {
       this.formErrors.email = 'Please enter a valid email address';
+      isValid = false;
+    }
+
+    if (!this.personalPhone.trim()) {
+      this.formErrors.phone = 'Phone number is required';
+      isValid = false;
+    }
+
+    if (!this.personalLocation.trim()) {
+      this.formErrors.location = 'Location is required';
+      isValid = false;
+    }
+
+    if (!this.personalSummary.trim()) {
+      this.formErrors.summary = 'Professional summary is required';
+      isValid = false;
+    }
+
+    if (this.personalSkills.length === 0) {
+      this.formErrors.skills = 'At least one skill is required';
       isValid = false;
     }
     
@@ -884,7 +909,7 @@ export class AppComponent implements OnInit {
         this.personalSummary = '';
         this.personalSkills = [];
         this.personalSkillsInput = '';
-        this.formErrors = { fullName: '', email: '' };
+        this.formErrors = { fullName: '', email: '', phone: '', location: '', summary: '', skills: '' };
         
         this.loading = false;
       },
@@ -925,5 +950,21 @@ export class AppComponent implements OnInit {
     this.cvData = null;
     this.sidebarOpen = false;
     this.createSessionOnLoad();
+  }
+
+  isPersonalInfoFormValid(): boolean {
+    return (
+      this.personalFullName?.trim() !== '' &&
+      this.personalEmail?.trim() !== '' &&
+      this.isValidEmail(this.personalEmail) &&
+      this.personalPhone?.trim() !== '' &&
+      this.personalLocation?.trim() !== '' &&
+      this.personalSummary?.trim() !== '' &&
+      this.personalSkills?.length > 0
+    );
+  }
+
+  onLanguageChange(event: any): void {
+    console.log('Language changed to:', event.target.value);
   }
 }
