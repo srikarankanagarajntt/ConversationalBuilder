@@ -44,6 +44,7 @@ export class AppComponent implements OnInit {
   showCvPreview = false;
   showTemplateModal = false;
   showPersonalInfoModal = false;
+  showExportModal = false;
   pendingExportFormat: 'pdf' | 'docx' | 'pptx' | 'json' | null = null;
   cvData: any = null;
   templates: TemplateWithPreview[] = [];
@@ -73,6 +74,9 @@ export class AppComponent implements OnInit {
   toastType: 'success' | 'error' | 'info' = 'info';
   showToast = false;
   private toastTimeout: any = null;
+
+  // Track file download completion
+  hasDownloadedFile = false;
 
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
@@ -294,33 +298,32 @@ export class AppComponent implements OnInit {
       return;
     }
 
-    // Show preview instead of immediate download
-    this.showCvPreview = true;
-    this.pendingExportFormat = format;
-    this.errorMessage = '';
-  }
-
-  downloadCv(): void {
-    if (!this.sessionId || !this.pendingExportFormat) {
-      this.errorMessage = 'Export session lost. Please try again.';
-      return;
-    }
-
-    const format = this.pendingExportFormat;
+    // Trigger actual download
     this.loading = true;
     this.errorMessage = '';
     this.api.exportCv(this.sessionId, format).subscribe({
       next: (res: { jobId: string; downloadUrl: string }) => {
         this.downloadFile(res.downloadUrl, format);
-        this.showCvPreview = false;
-        this.pendingExportFormat = null;
+        this.closeExportModal();
         this.loading = false;
+        this.hasDownloadedFile = true;
       },
       error: () => {
         this.errorMessage = `Failed to export CV as ${format.toUpperCase()}.`;
         this.loading = false;
       },
     });
+  }
+
+  downloadCv(): void {
+    if (!this.sessionId) {
+      this.errorMessage = 'No active session to export.';
+      return;
+    }
+
+    // Open export modal
+    this.showExportModal = true;
+    this.errorMessage = '';
   }
 
   closeCvPreview(): void {
@@ -907,6 +910,11 @@ export class AppComponent implements OnInit {
     template.isLoading = false;
   }
 
+  selectTemplateFromPreview(): void {
+    // Open template modal from preview
+    this.showTemplateModal = true;
+  }
+
   selectTemplate(): void {
     if (!this.sessionId || !this.selectedTemplateId) {
       this.errorMessage = 'Please select a template first.';
@@ -918,6 +926,7 @@ export class AppComponent implements OnInit {
     this.api.selectTemplate(this.sessionId, this.selectedTemplateId).subscribe({
       next: () => {
         this.showTemplateModal = false;
+        this.showCvPreview = false; // Close preview modal when template is selected
         this.errorMessage = '';
         this.loading = false;
         this.conversationHistory.push({
@@ -937,6 +946,14 @@ export class AppComponent implements OnInit {
     this.showTemplateModal = false;
     this.selectedTemplateId = null;
     this.errorMessage = '';
+  }
+
+  openExportModal(): void {
+    this.showExportModal = true;
+  }
+
+  closeExportModal(): void {
+    this.showExportModal = false;
   }
 
   addSkill(): void {
@@ -1064,6 +1081,8 @@ export class AppComponent implements OnInit {
     this.errorMessage = '';
     this.cvData = null;
     this.sidebarOpen = false;
+    this.selectedTemplateId = null;
+    this.hasDownloadedFile = false;
     this.createSessionOnLoad();
   }
 
@@ -1077,6 +1096,86 @@ export class AppComponent implements OnInit {
       this.personalSummary?.trim() !== '' &&
       this.personalSkills?.length > 0
     );
+  }
+
+  // Progress Bar Methods
+  showWorkflowProgress = true;
+  showFieldsProgress = true;
+
+  toggleProgressBar(type: string): void {
+    if (type === 'workflow') {
+      this.showWorkflowProgress = !this.showWorkflowProgress;
+    } else if (type === 'fields') {
+      this.showFieldsProgress = !this.showFieldsProgress;
+    }
+  }
+
+  isWorkflowStageCompleted(stage: string): boolean {
+    if (!this.cvData) return stage === 'upload' && this.sessionId !== '';
+    
+    switch (stage) {
+      case 'upload': // Chat & Upload
+        return this.sessionId !== '';
+      case 'edit': // Edit
+        return this.cvData?.personalInfo?.fullName !== '' && this.cvData?.personalInfo?.fullName !== undefined;
+      case 'preview': // Preview
+        return this.cvData?.experience?.length > 0;
+      case 'template': // Template
+        return this.selectedTemplateId !== null;
+      case 'download': // Download - only complete after file is downloaded
+        return this.hasDownloadedFile;
+      default:
+        return false;
+    }
+  }
+
+  getWorkflowProgress(): number {
+    let completed = 0;
+    const stages = ['upload', 'edit', 'preview', 'template', 'download'];
+    for (const stage of stages) {
+      if (this.isWorkflowStageCompleted(stage)) {
+        completed++;
+      }
+    }
+    return Math.round((completed / stages.length) * 100);
+  }
+
+  isFieldCompleted(field: string): boolean {
+    if (!this.cvData) return false;
+
+    switch (field) {
+      case 'personalInfo':
+        return (
+          this.cvData.personalInfo?.fullName?.trim() !== '' &&
+          this.cvData.personalInfo?.email?.trim() !== '' &&
+          this.cvData.personalInfo?.phone?.trim() !== ''
+        );
+      case 'skills':
+        return this.cvData.technicalSkills && Object.keys(this.cvData.technicalSkills).length > 0;
+      case 'experience':
+        return Array.isArray(this.cvData.experience) && this.cvData.experience.length > 0;
+      case 'projects':
+        return Array.isArray(this.cvData.projects) && this.cvData.projects.length > 0;
+      case 'education':
+        return Array.isArray(this.cvData.education) && this.cvData.education.length > 0;
+      case 'certifications':
+        return Array.isArray(this.cvData.certifications) && this.cvData.certifications.length > 0;
+      default:
+        return false;
+    }
+  }
+
+  getFieldsProgress(): number {
+    let completed = 0;
+    const fields = ['personalInfo', 'skills', 'experience', 'education', 'certifications'];
+    
+    for (const field of fields) {
+      if (this.isFieldCompleted(field)) {
+        completed++;
+      }
+    }
+    
+    return Math.round((completed / fields.length) * 100);
   }
 
   onLanguageChange(event: any): void {

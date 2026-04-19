@@ -73,13 +73,18 @@ class PromptService:
             "   - Extract and structure it\n"
             "   - Enhance with professional language\n"
             "   - List what you need next\n"
-            "6. Priority order for asking missing details:\n"
+            "6. IMPORTANT - ONLY UPDATE EXTRACTED FIELDS:\n"
+            "   - Only include fields in cvUpdate that the user provided or you extracted from their message\n"
+            "   - DO NOT clear or empty out existing fields that are already populated\n"
+            "   - Example: If user says 'I worked in Bangalore', only extract location. Don't extract empty title, role, dates, etc.\n"
+            "   - The backend will automatically merge your extracted fields with existing data\n"
+            "7. Priority order for asking missing details:\n"
             "   a. Work experience dates (startDate, endDate)\n"
             "   b. Project name and information\n"
             "   c. Client name\n"
             "   d. Technologies used\n"
             "   e. Specific achievements/metrics\n"
-            "7. Return a JSON object with:\n"
+            "8. Return a JSON object with:\n"
             '   - "reply": your friendly message acknowledging what you captured + asking for the next missing field\n'
             '   - "cvUpdate": extracted CV fields from this message (or empty {} if only asking for info)\n'
             '   - "nextQuestion": specific follow-up question for the next critical missing field\n'

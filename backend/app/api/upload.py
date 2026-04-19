@@ -4,7 +4,7 @@ from __future__ import annotations
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from app.models.responses import UploadCvResponse
-from app.models.cv_schema import CvSchema, PersonalInfo, ExperienceEntry, CertificationEntry
+from app.models.cv_schema import CvSchema, PersonalInfo, ExperienceEntry, EducationEntry, CertificationEntry
 from app.services.file_parser_service import FileParserService
 from app.services.cv_schema_service import CvSchemaService
 from app.services.llm_service import LLMService
@@ -143,6 +143,19 @@ def _map_to_cv_schema(base_cv: CvSchema, extracted_data: dict) -> CvSchema:
             )
         )
 
+    # Extract education
+    educations = []
+    for edu in extracted_data.get("education", []):
+        educations.append(
+            EducationEntry(
+                institution=edu.get("institution", ""),
+                degree=edu.get("degree", ""),
+                field=edu.get("field", ""),
+                startDate=edu.get("startDate", ""),
+                endDate=edu.get("endDate", "")
+            )
+        )
+
     # Extract skills
     skills = []
     technical_skills = extracted_data.get("technicalSkills", {})
@@ -166,6 +179,7 @@ def _map_to_cv_schema(base_cv: CvSchema, extracted_data: dict) -> CvSchema:
     # Update and return CV schema
     base_cv.personalInfo = personal_info
     base_cv.experience = work_experiences
+    base_cv.education = educations
     base_cv.skills = skills
     base_cv.certifications = certifications
     base_cv.header = header

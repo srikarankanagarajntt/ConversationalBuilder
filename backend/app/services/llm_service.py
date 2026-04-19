@@ -100,6 +100,16 @@ Please extract the following information and format it as JSON with these exact 
     }},
     ...
   ],
+  "education": [
+    {{
+      "institution": "university/college name",
+      "degree": "B.E./B.Tech/M.S./etc",
+      "field": "field of study/specialization",
+      "startDate": "YYYY or YYYY-MM format",
+      "endDate": "YYYY or YYYY-MM format"
+    }},
+    ...
+  ],
   "certifications": [
     {{
       "name": "certification name",
@@ -130,8 +140,27 @@ Extraction Rules:
 - For work experience sections: Look for structured data with dates (Month YYYY – Month YYYY format), look for bullets with responsibilities, look for lines with company name and position
 - Extract summary/objective section and split into logical sentences
 - Parse skills section and categorize into primary (most important) and secondary
+- Extract education entries with DETAILED extraction: LOOK FOR THESE PATTERNS:
+  * Look for degree types: B.E., B.Tech, M.S., M.Tech, MBA, B.Sc, B.A., BCom., M.A., B.Com, etc.
+  * Look for institution names (usually capitalized, often followed by location/city/state)
+  * Look for field/specialization patterns: "in [Field]", "[Field] Engineering", "[Field] Science", etc.
+  * Fields include: "Electrical and Electronics Engineering", "Computer Science", "Business Administration", etc.
+  * Look for CGPA/GPA (not required, just for reference)
+  * Look for graduation years/dates like "2015", "2023", commonly on same line as degree or institution
+  * EXAMPLE FORMAT FROM RESUMES: "R.M.D Engineering College, Chennai, TN. B.E. in Electrical and Electronics Engineering, 2015. CGPA: 7.9"
+    - Extract: institution="R.M.D Engineering College, Chennai", degree="B.E.", field="Electrical and Electronics Engineering", endDate="2015"
+  * Look for entries formatted like: "University Name, City. Degree in Field, Year." or "Degree in Field from University, Year"
+  * Look in sections with headers: "Education", "Academic", "Qualifications", "Educational Background"
+  * EVEN IF NO CLEAR HEADER: Look for bullets/lines with college names and degree patterns
+  * CRITICAL: Extract ALL education entries found, even if just listed as bullets without an "Education" section header
+  * Extract all of these components:
+    - institution: College/University name (e.g., "R.M.D Engineering College, Chennai")
+    - degree: Degree abbreviation (e.g., "B.E.", "B.Tech", "M.S.")
+    - field: Field of study (e.g., "Electrical and Electronics Engineering")
+    - endDate: Year of graduation (e.g., "2015", "2023")
 - Extract certifications with name, issuer, and date
 - IMPORTANT: If dates appear on the same line as company/position (e.g., "Company Name (Jan 2023 – Present)"), extract them
+- IMPORTANT: If dates appear on the same line as degree/institution (e.g., "X.E. in Electronics Engineering, 2015" or "R.M.D Engineering College. B.E. in Electronics, 2015"), extract them
 - IMPORTANT: If project, client, or technology information is embedded in descriptions, extract and separate them
 - If a specific field is not found, use empty string or empty array
 - Be accurate and don't make up information
@@ -140,7 +169,7 @@ Return only valid JSON, no additional text.
 """
 
         messages = [
-            {"role": "system", "content": "You are a CV parsing assistant. Always return valid JSON with all requested fields. Extract comprehensive details from work experience sections including company, dates, projects, clients, technologies, and responsibilities."},
+            {"role": "system", "content": "You are a CV parsing assistant. Always return valid JSON with all requested fields. Extract comprehensive details from work experience and education sections including company, dates, projects, clients, technologies, responsibilities, institutions, degrees, and fields of study."},
             {"role": "user", "content": prompt}
         ]
 
