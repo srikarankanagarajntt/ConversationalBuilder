@@ -99,7 +99,7 @@ class TemplateService:
             TEMPLATES[0].previewImageBase64 = _load_file_as_base64(ntt_preview_path)
 
         # Load Java Architect PPTX template
-        java_architect_path = os.path.join(TEMPLATE_DIR, "Resume - Java Lead Architect.pptx")
+        java_architect_path = os.path.join(TEMPLATE_DIR, "Resume_master_with_placeholders.pptx")
         TEMPLATES[1].fileBase64 = _load_file_as_base64(java_architect_path)
         
         # Try to load Java Architect preview image
