@@ -263,8 +263,15 @@ class ExportService:
                 {
                     "company": exp.company,
                     "title": exp.title,
+                    "role": exp.role,
                     "startDate": exp.startDate,
                     "endDate": exp.endDate,
+                    "location": exp.location,
+                    "projectName": exp.projectName,
+                    "projectInformation": exp.projectInformation,
+                    "clients": exp.clients,
+                    "technology": exp.technology or [],
+                    "description": exp.description,
                     "achievements": exp.achievements or []
                 }
                 for exp in cv.experience
@@ -311,9 +318,6 @@ class ExportService:
                 "primary": cv.technicalSkills.get("primary", []) if cv.technicalSkills else [],
                 "secondary": cv.technicalSkills.get("secondary", []) if cv.technicalSkills else []
             },
-
-            # Work Experience (from extracted data)
-            "workExperience": cv.workExperience or [],
 
             # Professional Summary
             "professionalSummary": cv.professionalSummary or [],

@@ -59,7 +59,8 @@ class FileParserService:
             "header": self._extract_header(lines),
             "professionalSummary": self._extract_professional_summary(text),
             "technicalSkills": self._extract_technical_skills(text),
-            "workExperience": self._extract_work_experience(text)
+            "workExperience": self._extract_work_experience(text),
+            "certifications": self._extract_certifications(text)
         }
         return extracted
 
@@ -157,3 +158,53 @@ class FileParserService:
                     })
 
         return experiences
+
+    def _extract_certifications(self, text: str) -> List[Dict[str, str]]:
+        """
+        Extract certifications from CV text.
+        Looks for sections with 'Certification', 'Certifications', or 'Credentials'.
+        """
+        certifications = []
+        cert_pattern = r'(?:certification|certifications|credentials)[\s\S]*?(?=(?:education|projects|languages|$))'
+        cert_sections = re.findall(cert_pattern, text, re.IGNORECASE)
+        
+        if not cert_sections:
+            return certifications
+        
+        for section in cert_sections:
+            lines = section.split('\n')
+            for line in lines:
+                line = line.strip()
+                if not line or line.lower() in ['certification', 'certifications', 'credentials']:
+                    continue
+                
+                # Try to extract name, issuer, and date from line
+                # Format could be: "AWS Solutions Architect - Amazon (2023)" or similar
+                parts = line.split('-') if '-' in line else [line]
+                
+                name = parts[0].strip() if len(parts) > 0 else line
+                issuer = parts[1].strip() if len(parts) > 1 else ""
+                
+                # Try to extract date from issuer or from end of name
+                date_pattern = r'\((\d{4})\)|\b(20\d{2})\b'
+                date_match = re.search(date_pattern, issuer + line)
+                date = date_match.group(1) or date_match.group(2) if date_match else ""
+                
+                if name and name != line:
+                    certifications.append({
+                        "name": name,
+                        "issuer": issuer,
+                        "date": date
+                    })
+                elif name:
+                    # If no dash found, try to parse as name - issuer (date)
+                    match = re.match(r'(.*?)\s*(?:by|from|-)?\s*([^(]*?)?(?:\(([^)]*)\))?$', line)
+                    if match:
+                        certifications.append({
+                            "name": match.group(1).strip(),
+                            "issuer": (match.group(2) or "").strip(),
+                            "date": (match.group(3) or "").strip()
+                        })
+        
+        return certifications
+

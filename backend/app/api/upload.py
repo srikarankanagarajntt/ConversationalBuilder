@@ -4,7 +4,7 @@ from __future__ import annotations
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from app.models.responses import UploadCvResponse
-from app.models.cv_schema import CvSchema, PersonalInfo, ExperienceEntry
+from app.models.cv_schema import CvSchema, PersonalInfo, ExperienceEntry, CertificationEntry
 from app.services.file_parser_service import FileParserService
 from app.services.cv_schema_service import CvSchemaService
 from app.services.llm_service import LLMService
@@ -107,17 +107,39 @@ def _map_to_cv_schema(base_cv: CvSchema, extracted_data: dict) -> CvSchema:
         fullName=header.get("fullName", ""),
         email=header.get("email", ""),
         phone=header.get("phone", ""),
+        location=header.get("location", ""),
+        role=header.get("jobTitle", ""),
         summary="\n".join(extracted_data.get("professionalSummary", []))
     )
 
-    # Extract work experience
+    # Extract work experience with consolidated structure
     work_experiences = []
     for exp in extracted_data.get("workExperience", []):
         work_experiences.append(
             ExperienceEntry(
                 company=exp.get("employer", ""),
                 title=exp.get("position", ""),
-                achievements=[exp.get("project_description", "")] if exp.get("project_description") else []
+                role=exp.get("position", ""),
+                startDate=exp.get("startDate", ""),
+                endDate=exp.get("endDate", ""),
+                location=exp.get("location", ""),
+                clients=exp.get("clients", ""),
+                projectName=exp.get("projectName", ""),
+                projectInformation=exp.get("projectInformation", ""),
+                technology=exp.get("technology", []) if isinstance(exp.get("technology", []), list) else [],
+                description=exp.get("project_description", ""),
+                achievements=exp.get("achievements", []) if isinstance(exp.get("achievements", []), list) else []
+            )
+        )
+
+    # Extract certifications
+    certifications = []
+    for cert in extracted_data.get("certifications", []):
+        certifications.append(
+            CertificationEntry(
+                name=cert.get("name", ""),
+                issuer=cert.get("issuer", ""),
+                date=cert.get("date", "")
             )
         )
 
@@ -141,24 +163,14 @@ def _map_to_cv_schema(base_cv: CvSchema, extracted_data: dict) -> CvSchema:
                 for skill in technical_skills[key]
             ]
 
-    # Normalize work experience to camelCase
-    normalized_work_experience = [
-        {
-            "employer": exp.get("employer", ""),
-            "position": exp.get("position", ""),
-            "projectDescription": exp.get("project_description", "")
-        }
-        for exp in extracted_data.get("workExperience", [])
-    ]
-
     # Update and return CV schema
     base_cv.personalInfo = personal_info
     base_cv.experience = work_experiences
     base_cv.skills = skills
+    base_cv.certifications = certifications
     base_cv.header = header
     base_cv.professionalSummary = extracted_data.get("professionalSummary", [])
     base_cv.technicalSkills = normalized_technical_skills
-    base_cv.workExperience = normalized_work_experience
 
     return base_cv
 

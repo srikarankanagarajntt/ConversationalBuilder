@@ -11,7 +11,7 @@ class CreateSessionRequest(BaseModel):
 
 class ConversationMessageRequest(BaseModel):
     sessionId: str
-    message: str = Field(..., min_length=1, max_length=4000)
+    message: str = Field(..., min_length=1, max_length=50000)
 
 
 class PersonalInfoRequest(BaseModel):

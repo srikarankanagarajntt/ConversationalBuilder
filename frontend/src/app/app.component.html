@@ -73,6 +73,18 @@
 
   <!-- Main Content -->
   <main class="main-content">
+    <!-- Toast Notification -->
+    <div class="toast-container" [class.show]="showToast" [class]="'toast-' + toastType">
+      <div class="toast-content">
+        <span class="toast-message">{{ toastMessage }}</span>
+        <button class="toast-close-btn" (click)="closeToast()">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
     <!-- Header with Hamburger Menu -->
     <header class="chat-header">
       <button class="hamburger-btn" (click)="toggleSidebar()">
@@ -214,38 +226,120 @@
       </div>
   
       <div class="preview-content">
-        <!-- Personal Info -->
+        <!-- Personal Info with Role/Job Title -->
         <div *ngIf="cvData?.personalInfo" class="preview-section">
           <h3>{{ cvData.personalInfo.fullName || 'Your Name' }}</h3>
+          <p *ngIf="cvData.personalInfo.role || cvData.header?.jobTitle" class="job-title-header">
+            {{ cvData.personalInfo.role || cvData.header?.jobTitle }}
+          </p>
           <p *ngIf="cvData.personalInfo.email" class="contact-info">📧 {{ cvData.personalInfo.email }}</p>
           <p *ngIf="cvData.personalInfo.phone" class="contact-info">📱 {{ cvData.personalInfo.phone }}</p>
           <p *ngIf="cvData.personalInfo.location" class="contact-info">📍 {{ cvData.personalInfo.location }}</p>
-          <p *ngIf="cvData.personalInfo.summary" class="summary">{{ cvData.personalInfo.summary }}</p>
+        </div>
+
+        <!-- Professional Summary (bulleted, italic) -->
+        <div *ngIf="cvData?.professionalSummary && cvData.professionalSummary.length > 0" class="preview-section">
+          <h4>Professional Summary</h4>
+          <ul class="summary-bullets">
+            <li *ngFor="let summary of cvData.professionalSummary">{{ summary }}</li>
+          </ul>
         </div>
   
-        <!-- Skills -->
-        <div *ngIf="cvData?.skills && cvData.skills.length > 0" class="preview-section">
+        <!-- Technical Skills (Primary and Secondary) -->
+        <div *ngIf="cvData?.technicalSkills" class="preview-section">
+          <h4>Technical Skills</h4>
+          <div *ngIf="cvData.technicalSkills?.primary && cvData.technicalSkills.primary.length > 0">
+            <strong>Primary Skills:</strong>
+            <div class="skills-list">
+              <span *ngFor="let skill of cvData.technicalSkills.primary" class="skill-tag">
+                {{ skill.skillName || skill }}
+              </span>
+            </div>
+          </div>
+          <div *ngIf="cvData.technicalSkills?.secondary && cvData.technicalSkills.secondary.length > 0" style="margin-top: 10px;">
+            <strong>Secondary Skills:</strong>
+            <div class="skills-list">
+              <span *ngFor="let skill of cvData.technicalSkills.secondary" class="skill-tag">
+                {{ skill.skillName || skill }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fallback: Simple Skills List -->
+        <div *ngIf="!cvData?.technicalSkills && cvData?.skills && cvData.skills.length > 0" class="preview-section">
           <h4>Skills</h4>
           <div class="skills-list">
             <span *ngFor="let skill of cvData.skills" class="skill-tag">{{ skill }}</span>
           </div>
         </div>
   
-        <!-- Experience -->
+        <!-- Work Experience (consolidated from experience and workExperience) -->
         <div *ngIf="cvData?.experience && cvData.experience.length > 0" class="preview-section">
           <h4>Experience</h4>
           <div *ngFor="let exp of cvData.experience" class="experience-item">
+            <!-- Company, Title, Location -->
             <div class="job-header">
-              <strong>{{ exp.title }}</strong> at <strong>{{ exp.company }}</strong>
+              <strong>{{ exp.title || exp.role }}</strong> at <strong>{{ exp.company }}</strong>
+              <span *ngIf="exp.location" class="location-info"> 📍 {{ exp.location }}</span>
             </div>
-            <div class="job-dates">{{ exp.startDate }} – {{ exp.endDate }}</div>
-            <ul *ngIf="exp.achievements && exp.achievements.length > 0">
-              <li *ngFor="let achievement of exp.achievements">{{ achievement }}</li>
+            
+            <!-- Employment Dates -->
+            <div class="job-dates" *ngIf="exp.startDate || exp.endDate">
+              <strong>{{ exp.startDate }}</strong>
+              <span *ngIf="exp.startDate && exp.endDate"> – </span>
+              <strong>{{ exp.endDate }}</strong>
+            </div>
+            
+            <!-- Client (if applicable) -->
+            <div class="client-section" *ngIf="exp.clients">
+              <strong>Client:</strong> {{ exp.clients }}
+            </div>
+            
+            <!-- Project Name and Information -->
+            <div class="project-section" *ngIf="exp.projectName || exp.projectInformation">
+              <div *ngIf="exp.projectName" class="project-name">
+                <strong>Project:</strong> {{ exp.projectName }}
+              </div>
+              <div *ngIf="exp.projectInformation" class="project-info">
+                <strong>Project Details:</strong>
+                <p>{{ exp.projectInformation }}</p>
+              </div>
+            </div>
+            
+            <!-- Main Description as italic bullet -->
+            <ul *ngIf="exp.description" class="achievements-list">
+              <li>{{ exp.description }}</li>
             </ul>
+            
+            <!-- Responsibilities/Achievements -->
+            <div *ngIf="exp.achievements && exp.achievements.length > 0" class="achievements-section">
+              <strong>Responsibilities:</strong>
+              <ul class="achievements-list">
+                <li *ngFor="let achievement of exp.achievements">{{ achievement }}</li>
+              </ul>
+            </div>
+            
+            <!-- Technologies -->
+            <div *ngIf="exp.technology && exp.technology.length > 0" class="tech-tags">
+              <strong>Technologies:</strong>
+              <span *ngFor="let tech of exp.technology" class="tech-tag">{{ tech }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fallback: workExperience (if experience not available) -->
+        <div *ngIf="!cvData?.experience && cvData?.workExperience && cvData.workExperience.length > 0" class="preview-section">
+          <h4>Experience</h4>
+          <div *ngFor="let exp of cvData.workExperience" class="experience-item">
+            <div class="job-header">
+              <strong>{{ exp.position }}</strong> at <strong>{{ exp.employer }}</strong>
+            </div>
+            <p *ngIf="exp.projectDescription" class="job-description">{{ exp.projectDescription }}</p>
           </div>
         </div>
   
-        <!-- Eduaction -->
+        <!-- Education -->
         <div *ngIf="cvData?.education && cvData.education.length > 0" class="preview-section">
           <h4>Education</h4>
           <div *ngFor="let edu of cvData.education" class="education-item">
@@ -271,7 +365,7 @@
         <div *ngIf="cvData?.certifications && cvData.certifications.length > 0" class="preview-section">
           <h4>Certifications</h4>
           <div *ngFor="let cert of cvData.certifications" class="cert-item">
-            <strong>{{ cert.name }}</strong> - {{ cert.issuer }} ({{ cert.date }})
+            <strong>{{ cert.name }}</strong> - {{ cert.issuer }} <span *ngIf="cert.date">({{ cert.date }})</span>
           </div>
         </div>
   

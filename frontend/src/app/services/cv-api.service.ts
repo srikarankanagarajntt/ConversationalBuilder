@@ -112,4 +112,11 @@ export class CvApiService {
       skills,
     });
   }
+
+  uploadCv(file: File, sessionId: string): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('sessionId', sessionId);
+    return this.http.post<any>(`${environment.apiBaseUrl}/upload/cv`, formData);
+  }
 }

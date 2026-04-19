@@ -20,14 +20,22 @@ class PersonalInfo(BaseSchemaModel):
     phone: str = ""
     location: str = ""
     summary: str = ""
+    role: str = ""  # Job title/role of the person
 
 
 class ExperienceEntry(BaseSchemaModel):
     company: str = ""
-    title: str = ""
+    title: str = ""  # Job title
+    role: str = ""  # Specific role/position
     startDate: str = ""
     endDate: str = ""
-    achievements: List[str] = Field(default_factory=list)
+    location: str = ""  # Work location
+    clients: str = ""  # Client organization
+    projectName: str = ""  # Specific project name
+    projectInformation: str = ""  # Detailed project information/description
+    technology: List[str] = Field(default_factory=list)  # Technologies used
+    description: str = ""  # Overall job description
+    achievements: List[str] = Field(default_factory=list)  # Roles and responsibilities (bulleted)
 
 
 class EducationEntry(BaseSchemaModel):
@@ -70,4 +78,3 @@ class CvSchema(BaseSchemaModel):
     header: Dict[str, str] = Field(default_factory=dict)
     professionalSummary: List[str] = Field(default_factory=list)
     technicalSkills: Dict[str, List[Dict[str, str]]] = Field(default_factory=dict)
-    workExperience: List[Dict[str, str]] = Field(default_factory=list)
