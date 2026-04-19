@@ -781,6 +781,13 @@
   color: #162347;
 }
 
+.job-title-header {
+  font-size: 18px;
+  color: #0066cc;
+  margin: 0 0 12px 0;
+  font-weight: 500;
+}
+
 .preview-section h4 {
   font-size: 16px;
   margin: 0 0 12px 0;
@@ -795,10 +802,16 @@
   font-size: 14px;
 }
 
-.summary {
-  margin-top: 12px;
+.summary-bullets {
+  margin: 0;
+  padding-left: 20px;
+  list-style: disc;
+}
+
+.summary-bullets li {
   font-style: italic;
   color: #666;
+  margin: 6px 0;
   line-height: 1.5;
 }
 
@@ -818,6 +831,13 @@
   font-weight: 500;
 }
 
+.proficiency {
+  font-size: 11px;
+  color: #666;
+  font-weight: normal;
+  margin-left: 4px;
+}
+
 .experience-item {
   margin-bottom: 16px;
   padding: 12px;
@@ -831,10 +851,79 @@
   margin-bottom: 4px;
 }
 
+.client-info {
+  color: #666;
+  font-size: 14px;
+  font-weight: normal;
+}
+
 .job-dates {
   font-size: 13px;
   color: #666;
   margin-bottom: 8px;
+}
+
+.location-info {
+  font-size: 13px;
+  color: #888;
+  margin-left: 8px;
+}
+
+.client-section {
+  font-size: 14px;
+  color: #555;
+  margin: 8px 0;
+  padding: 6px 0;
+  border-left: 3px solid #0066cc;
+  padding-left: 10px;
+}
+
+.project-section {
+  margin: 10px 0;
+  padding: 8px;
+  background: #f0f4f8;
+  border-radius: 4px;
+}
+
+.project-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #0066cc;
+  margin: 4px 0;
+}
+
+.project-info {
+  font-size: 13px;
+  color: #555;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+.project-info p {
+  margin: 4px 0;
+}
+
+.achievements-section {
+  margin: 10px 0;
+}
+
+.achievements-section strong {
+  font-size: 14px;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.achievements-list {
+  margin: 8px 0;
+  padding-left: 20px;
+  list-style: disc;
+}
+
+.achievements-list li {
+  font-style: italic;
+  font-size: 14px;
+  margin: 4px 0;
+  color: #555;
 }
 
 .experience-item ul {
@@ -853,6 +942,70 @@
   padding: 12px;
   background: #f9f9f9;
   border-radius: 4px;
+}
+
+.project-item {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f9f9f9;
+  border-left: 4px solid #4caf50;
+  border-radius: 4px;
+}
+
+.project-item strong {
+  color: #162347;
+  font-size: 15px;
+}
+
+.project-item p {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #555;
+}
+
+.tech-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.tech-tag {
+  display: inline-block;
+  background: #e8f5e9;
+  color: #2e7d32;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.cert-item {
+  margin-bottom: 10px;
+  padding: 10px;
+  background: #f9f9f9;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.cert-item strong {
+  color: #162347;
+}
+
+.languages-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.language-tag {
+  display: inline-block;
+  background: #fff3e0;
+  color: #e65100;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 /* Responsive Design */
@@ -1449,4 +1602,120 @@
 
 .preview-header-end {
   display: flex;
+}
+
+/* Toast Notification Styles */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  max-width: 400px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  z-index: 9999;
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateX(400px);
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.toast-container.show {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.toast-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+}
+
+.toast-message {
+  flex: 1;
+  word-break: break-word;
+}
+
+.toast-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.toast-close-btn:hover {
+  opacity: 1;
+}
+
+/* Toast color variants */
+.toast-success {
+  background-color: #4caf50;
+  color: white;
+}
+
+.toast-success .toast-close-btn {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.toast-success .toast-close-btn:hover {
+  color: white;
+}
+
+.toast-error {
+  background-color: #f44336;
+  color: white;
+}
+
+.toast-error .toast-close-btn {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.toast-error .toast-close-btn:hover {
+  color: white;
+}
+
+.toast-info {
+  background-color: #2196f3;
+  color: white;
+}
+
+.toast-info .toast-close-btn {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.toast-info .toast-close-btn:hover {
+  color: white;
+}
+
+/* Responsive toast positioning */
+@media (max-width: 768px) {
+  .toast-container {
+    max-width: 90vw;
+    left: 10px;
+    right: 10px;
+    top: 10px;
+  }
+
+  .toast-container.show {
+    transform: translateY(0);
+  }
+
+  .toast-container {
+    transform: translateY(-100px);
+  }
 }

@@ -39,11 +39,23 @@ class ValidationService:
             missing.append("technicalSkills.primary")
 
         # Check work experience
-        if not cv.workExperience:
-            missing.append("workExperience")
-
-        # Check declaration.place (assuming it's not present, add if needed)
-        # For now, skip
+        if not cv.experience:
+            missing.append("experience")
+        else:
+            # Check for critical missing fields within each experience entry
+            for i, exp in enumerate(cv.experience):
+                if not exp.startDate:
+                    missing.append(f"experience[{i}].startDate")
+                if not exp.endDate:
+                    missing.append(f"experience[{i}].endDate")
+                if not exp.projectName:
+                    missing.append(f"experience[{i}].projectName")
+                if not exp.projectInformation:
+                    missing.append(f"experience[{i}].projectInformation")
+                if not exp.clients:
+                    missing.append(f"experience[{i}].clients")
+                if not exp.technology or len(exp.technology) == 0:
+                    missing.append(f"experience[{i}].technology")
 
         return missing
 

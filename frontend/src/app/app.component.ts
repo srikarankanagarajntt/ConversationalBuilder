@@ -68,6 +68,12 @@ export class AppComponent implements OnInit {
     skills: '',
   };
 
+  // Toast notification
+  toastMessage = '';
+  toastType: 'success' | 'error' | 'info' = 'info';
+  showToast = false;
+  private toastTimeout: any = null;
+
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
 
@@ -392,45 +398,130 @@ export class AppComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('sessionId', this.sessionId);
-
-    this.http.post<any>(`${environment.apiBaseUrl}/upload/cv`, formData).subscribe({
+    this.api.uploadCv(file, this.sessionId).subscribe({
       next: (response: any) => {
+        console.log('Upload response received:', response);
+        
+        // Show success toast message
+        this.showToastNotification('✅ Resume uploaded successfully!', 'success');
+
         // Update CV data if available
         if (response.extracted_data) {
           const header = response.extracted_data.header || {};
           const skills = response.extracted_data.technicalSkills || {};
-          const experience = response.extracted_data.workExperience || [];
+          const workExperienceList = response.extracted_data.workExperience || [];
+          const experienceList = response.extracted_data.experience || [];
+          
+          // Map workExperience to consolidated experience format
+          const mappedExperience = workExperienceList.map((exp: any) => ({
+            company: exp.employer || '',
+            title: exp.position || '',
+            role: exp.position || '',
+            startDate: exp.startDate || '',
+            endDate: exp.endDate || '',
+            location: exp.location || '',
+            clients: exp.clients || '',
+            projectName: exp.projectName || '',
+            projectInformation: exp.projectInformation || '',
+            technology: exp.technology || [],
+            description: exp.projectDescription || '',
+            achievements: exp.achievements || [],
+          }));
+
+          // Also include experience entries if they exist
+          const allExperience = experienceList.length > 0 ? experienceList : mappedExperience;
           
           this.cvData = { 
-            ...this.cvData,
+            ...response.extracted_data,
             personalInfo: {
               fullName: header.fullName || '',
               email: header.email || '',
               phone: header.phone || '',
               location: header.location || '',
-              linkedin: header.linkedin || '',
+              role: header.jobTitle || '',
               summary: Array.isArray(response.extracted_data.professionalSummary)
-                ? response.extracted_data.professionalSummary.join(' ')
+                ? response.extracted_data.professionalSummary.join('\n')
                 : (response.extracted_data.professionalSummary || ''),
             },
             skills: this.extractSkillsFromTechnical(skills),
-            experience: experience,
+            experience: allExperience,
+            // Ensure certifications are included
+            certifications: response.extracted_data.certifications || [],
+            header: header,
           };
-
-          // Send extracted CV data to conversation service for LLM processing
-          this.sendExtractedCvToConversation(response.extracted_data);
-        } else {
-          this.loading = false;
-          this.errorMessage = 'No data extracted from resume.';
         }
+
+        // Always send the upload response to conversation service immediately
+        console.log('Sending to conversation service...');
+        this.sendUploadResponseToConversation(response);
       },
       error: (error) => {
         this.loading = false;
         const errorMsg = error.error?.detail || error.error?.message || 'Failed to upload resume. Please try again.';
         this.errorMessage = `Upload failed: ${errorMsg}`;
+        
+        console.error('Upload error:', error);
+        
+        // Show error toast message
+        this.showToastNotification(`❌ ${errorMsg}`, 'error');
+        
+        this.conversationHistory.push({
+          role: 'assistant',
+          content: `❌ ${errorMsg}`,
+          timestamp: new Date(),
+        });
+        
+        this.scrollToBottom();
+      },
+    });
+  }
+
+  private sendUploadResponseToConversation(uploadResponse: any): void {
+    console.log('sendUploadResponseToConversation called with:', uploadResponse);
+    
+    // Add user message to conversation history
+    const extractedData = uploadResponse.extracted_data || uploadResponse;
+    this.conversationHistory.push({
+      role: 'user',
+      content: `📄 Resume uploaded\n\n${this.formatCvDataAsMessage(extractedData)}`,
+      timestamp: new Date(),
+    });
+
+    // Send the full upload response to conversation endpoint for LLM processing
+    const messageContent = JSON.stringify(uploadResponse);
+    console.log('Calling sendMessage with:', messageContent.substring(0, 100) + '...');
+    
+    this.api.sendMessage(this.sessionId, messageContent).subscribe({
+      next: (res: ConversationResponse) => {
+        console.log('Conversation message response:', res);
+        
+        // Add LLM response to conversation
+        this.conversationHistory.push({
+          role: 'assistant',
+          content: res.reply,
+          timestamp: new Date(),
+        });
+
+        this.transcript = '';
+        this.missingFields = res.missingFields;
+        this.message = '';
+        this.loading = false;
+
+        // Update CV data from response (enables preview button)
+        this.cvData = (res as any).cvDraft || null;
+
+        // Show personal info modal if indicated
+        if (res.showPersonalInfoModal) {
+          this.showPersonalInfoModal = true;
+        }
+
+        this.scrollToBottom();
+      },
+      error: (error) => {
+        console.error('Conversation message error:', error);
+        this.loading = false;
+        const errorMsg = error.error?.detail || error.error?.message || 'Failed to process resume.';
+        this.errorMessage = `Processing failed: ${errorMsg}`;
         
         this.conversationHistory.push({
           role: 'assistant',
@@ -578,6 +669,30 @@ export class AppComponent implements OnInit {
     }, 100);
   }
 
+  private showToastNotification(message: string, type: 'success' | 'error' | 'info' = 'info'): void {
+    this.toastMessage = message;
+    this.toastType = type;
+    this.showToast = true;
+
+    // Clear any existing timeout
+    if (this.toastTimeout) {
+      clearTimeout(this.toastTimeout);
+    }
+
+    // Auto-hide toast after 4 seconds
+    this.toastTimeout = setTimeout(() => {
+      this.showToast = false;
+      this.toastTimeout = null;
+    }, 4000);
+  }
+
+  closeToast(): void {
+    this.showToast = false;
+    if (this.toastTimeout) {
+      clearTimeout(this.toastTimeout);
+      this.toastTimeout = null;
+    }
+  }
 
 
   showTemplateSelector(): void {
