@@ -341,8 +341,31 @@ export class AppComponent implements OnInit {
     }
 
     this.api.downloadFile(fileId).subscribe({
-      next: (blob: Blob) => {
-        const filename = `resume.${format}`;
+      next: (response: any) => {
+        // Extract filename from Content-Disposition header
+        // Supports formats:
+        //   - attachment; filename="John_cv.pdf" (RFC 5987 - quoted)
+        //   - attachment; filename=John_cv.pdf (unquoted)
+        //   - attachment; filename*=UTF-8''John_cv.pdf (RFC 5987 - encoded)
+        let filename = `resume.${format}`; // fallback filename
+        
+        const contentDisposition = response.headers.get('content-disposition');
+        if (contentDisposition) {
+          // Try RFC 5987 encoded filename first (filename*=)
+          let matches = contentDisposition.match(/filename\*=(?:UTF-8'')?([^;]+)/i);
+          if (matches && matches[1]) {
+            // Decode URL-encoded filename
+            filename = decodeURIComponent(matches[1]).trim();
+          } else {
+            // Try standard filename= (quoted or unquoted)
+            matches = contentDisposition.match(/filename=(?:"([^"]*)"|([^;,\s]*))/i);
+            if (matches && (matches[1] || matches[2])) {
+              filename = (matches[1] || matches[2]).trim();
+            }
+          }
+        }
+        
+        const blob = response.body;
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;

@@ -72,8 +72,11 @@ export class CvApiService {
     });
   }
 
-  downloadFile(fileId: string): Observable<Blob> {
-    return this.http.get(`${environment.apiBaseUrl}/download/${fileId}`, { responseType: 'blob' });
+  downloadFile(fileId: string): Observable<any> {
+    return this.http.get(`${environment.apiBaseUrl}/download/${fileId}`, { 
+      responseType: 'blob',
+      observe: 'response'
+    });
   }
 
   testLlm(prompt: string): Observable<{ model: string; output: string }> {

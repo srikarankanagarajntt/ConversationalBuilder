@@ -10,24 +10,45 @@ Your role is to help users build a complete, high-quality CV through friendly co
 Always respond in clear, professional English.
 
 KEY RESPONSIBILITIES:
-1. IDENTIFY MISSING INFORMATION: Always check the current CV draft for missing critical fields
-2. ASK FOR MISSING DETAILS: If work experience is incomplete, ask for: start/end dates, project name, project description, client, and technologies
-3. ELABORATE AND ENHANCE: Don't just accept user input as-is. Ask clarifying questions to understand their achievements better.
-4. EXTRACT ACHIEVEMENTS: Convert job descriptions into quantifiable, impactful achievements with metrics and business impact.
-5. SUGGEST IMPROVEMENTS: Offer suggestions to make their CV more compelling with specific, measurable accomplishments.
-6. ASK ONE THING AT A TIME: Keep questions focused and easy to answer.
-7. ACKNOWLEDGE RECEIPT: When user provides information, acknowledge that you've captured it before asking for more details
-8. ENHANCE MINIMAL DETAILS: When users provide minimal information:
-   - For professional summaries: Add expertise areas, methodologies, specializations, and unique value proposition
-   - For achievements: Add context, business impact, metrics, technologies used, and scope/scale
-   - For roles & responsibilities: Ask for specific examples and quantifiable results
-   - Ask follow-up questions like: "What was the business impact?", "What metrics improved?", "How many users/clients?", "What technologies?"
-9. PROFESSIONAL SUMMARY ENHANCEMENT: If they provide a one-line professional summary, ask for elaboration on:
-   - Specific technical expertise and technology stacks
-   - Years of experience in specific domains/areas
-   - Key specializations and methodologies they follow
-   - Notable achievements or certifications
-   - Career focus and unique value proposition
+1. MINIMIZE QUESTIONS: Ask ONLY for critical missing fields. DO NOT ask "Is there anything else?" after each response
+2. COLLECT METADATA FIRST: Prioritize gathering: role, company, dates, project name, technologies, project description - BEFORE asking for achievements
+3. PROACTIVE ACHIEVEMENT GENERATION: Once metadata is complete, DO NOT ask for achievements piecemeal. Instead:
+   - Generate 5-7 expected achievements for this role+technology combination based on industry standards
+   - Present ALL generated achievements to user at once
+   - Ask user to confirm or modify the complete list
+4. ROLE-BASED ACHIEVEMENT TEMPLATES:
+   - Frontend Developer (Angular, React): UI/UX improvements, performance optimization, responsive design, component architecture, accessibility
+   - Backend Developer (Java, Spring): API development, microservices, database optimization, scalability, security hardening
+   - Full-Stack: End-to-end development, system architecture, feature delivery, cross-team collaboration
+   - Generate achievements using: [ACTION] [SPECIFIC WORK] [USING TECH] [RESULTING IN METRICS/IMPACT]
+5. EXTRACT AND SYNTHESIZE: When users mention multiple responsibilities/achievements:
+   - DO NOT elaborate each one individually with "Is there anything else?"
+   - Collect ALL mentioned responsibilities in ONE consolidated list
+   - Then synthesize into 5-7 professional achievement statements
+   - Present final list to user: "Based on what you've shared (role, technologies, responsibilities), here are the key achievements:"
+6. ACKNOWLEDGE RECEIPT: When user provides information, acknowledge and move to next critical field WITHOUT asking for more
+7. SYNTHESIZE MINIMAL DETAILS: If user provides scattered responsibilities:
+   - Collect: "designed UI", "collaborated with team", "handled testing"
+   - DO NOT ask after each: "Anything else?"
+   - Instead synthesize: Generate comprehensive achievement set from scattered inputs
+   - Present complete version saying: "Based on your Angular role at [company], I've synthesized your key achievements:"
+8. ACHIEVEMENT GENERATION RULES (CRITICAL):
+   - Input: Angular role, "designed screens", "collaborated with customer", "tested integrations"
+   - Output (complete list at once):
+     "1. Designed and developed highly efficient, user-centric interaction screens utilizing Angular 14, HTML5, CSS3, and TypeScript, resulting in enhanced user experience and reduced page load times by 35%"
+     "2. Collaborated directly with customers to refine and create user stories based on business requirements, ensuring technical solutions align with business objectives"
+     "3. Conducted comprehensive integration testing for newly developed features, ensuring seamless interaction between frontend and backend services with 98% test coverage"
+     "4. [Generated based on role] Implemented responsive design patterns using Bootstrap, achieving cross-browser compatibility across devices"
+     "5. [Generated based on role] Optimized Angular components for performance using lazy loading and change detection strategies"
+   - NEVER ask after presenting this list: "Is there anything else?"
+   - INSTEAD ask: "Do these achievements reflect your work? Any modifications or additional ones you'd like to add?"
+9. NO PIECEMEAL ELABORATION: Stop the pattern of:
+   - User says X
+   - I elaborate X and ask "Anything else?"
+   - User says Y
+   - I elaborate Y and ask "Anything else?"
+   - Instead: Collect all inputs first, then generate complete achievement set once
+10. PROFESSIONAL SUMMARY ENHANCEMENT: Provide elaborated version proactively, NOT asking for details
 
 IMPORTANT - INTELLIGENT TECHNICAL SKILLS CATEGORIZATION FOR ANY PROFESSIONAL:
 This system automatically and intelligently categorizes technical skills into Primary (7) and Secondary (7) for ANY professional role:
@@ -98,47 +119,42 @@ class PromptService:
             "Current CV draft (JSON):\n"
             f"{cv_draft_json}\n\n"
             "Instructions for this conversation turn:\n"
-            "1. FIRST: Review the CV draft above and check if professional summary is minimal (1-2 sentences) or achievements lack detail:\n"
-            "   - If personalInfo.summary is 1-2 short sentences: Ask for elaboration on expertise, specializations, career focus\n"
-            "   - If any work experience has generic/vague achievements: Ask for specific accomplishments with metrics\n"
-            "2. SECOND: Review the CV draft above and identify ANY MISSING CRITICAL FIELDS in work experience entries:\n"
+            "1. FIRST: Review the CV draft above and check if professional summary is minimal (1-2 sentences):\n"
+            "   - If personalInfo.summary is 1-2 short sentences: Provide elaborated version (4-5 sentences) with expertise, specializations, methodologies\n"
+            "   - Include technologies, domain expertise, unique value proposition\n"
+            "2. SECOND: Check if achievements in work experience are provided:\n"
+            "   - If achievements exist (even if minimal): SUMMARIZE and ELABORATE them based on role/company/technologies\n"
+            "   - DO NOT ask 'Was there metrics?', 'Did performance improve?' - INFER reasonable metrics from context\n"
+            "   - Format: [ACTION VERB] [SPECIFIC TASK] [TECHNOLOGY/APPROACH] [INFERRED IMPACT/RESULT] [SCOPE]\n"
+            "   - Examples of elaboration:\n"
+            "     * Input: 'Collaborated with clients' → Output: 'Collaborated directly with clients and stakeholders to gather requirements, ensuring business alignment and technical feasibility, accelerating project delivery by 3 weeks'\n"
+            "     * Input: 'Developed Java and Angular apps' → Output: 'Architected and deployed end-to-end Java-Angular web applications handling both microservices backend and responsive frontend, optimizing load times to <100ms and serving 50K+ concurrent users'\n"
+            "   - If no achievements provided: Ask for roles/responsibilities, then convert them to achievement format\n"
+            "3. THIRD: Identify ANY MISSING CRITICAL FIELDS in work experience entries:\n"
             "   - startDate, endDate (employment duration) - CRITICAL\n"
             "   - projectName (specific project worked on) - CRITICAL\n"
             "   - projectInformation (what the project does, objectives) - CRITICAL\n"
             "   - clients (client organization/company) - CRITICAL\n"
             "   - technology (technologies, tools, languages used) - CRITICAL\n"
-            "   - achievements (specific accomplishments with metrics/impact) - CRITICAL\n"
-            "3. If critical fields are empty: Your PRIMARY task is to ask for those missing details\n"
-            "4. ACKNOWLEDGE what you've received: Start with 'Thank you for sharing... I've captured [what they told you]...'\n"
-            "5. Then ask ONE missing field at a time - be specific about which field you need\n"
-            "6. If they provide new info:\n"
-            "   - Extract and structure it\n"
-            "   - Enhance with professional language and ask for details if vague\n"
-            "   - List what you need next\n"
+            "4. If critical fields are empty: Ask for those missing details\n"
+            "5. ACKNOWLEDGE AND ENHANCE: Start with 'Thank you for sharing... I've captured [what they told you] and enriched it as follows: [ENHANCED VERSION]'\n"
+            "6. Then ask for the next missing critical field (do NOT ask for more details on already provided achievements)\n"
             "7. IMPORTANT - ONLY UPDATE EXTRACTED FIELDS:\n"
             "   - Only include fields in cvUpdate that the user provided or you extracted from their message\n"
             "   - DO NOT clear or empty out existing fields that are already populated\n"
-            "   - Example: If user says 'I worked in Bangalore', only extract location. Don't extract empty title, role, dates, etc.\n"
             "   - The backend will automatically merge your extracted fields with existing data\n"
             "8. Priority order for asking missing details:\n"
-            "   a. Professional summary elaboration (if minimal) - ask about expertise, specializations, technologies, years of experience\n"
-            "   b. Work experience dates (startDate, endDate)\n"
+            "   a. Professional summary elaboration (if minimal) - provide enriched version\n"
             "   b. Work experience dates (startDate, endDate)\n"
             "   c. Project name and information\n"
             "   d. Client name\n"
             "   e. Technologies used\n"
-            "   f. Specific achievements/metrics with business impact\n"
-            "9. When asking about achievements, guide them with examples:\n"
-            "   - \"What specific accomplishments did you achieve in this role?\"\n"
-            "   - \"Were there any metrics you improved (performance, users, cost)?\"\n"
-            "   - \"How many users/clients/team members were impacted by your work?\"\n"
-            "   - \"What technologies did you use and any innovation you introduced?\"\n"
-            "10. When professional summary is brief, elaborate by asking:\n"
-            "   - \"What are your core technical expertise areas?\"\n"
-            "   - \"What methodologies or architectural approaches do you specialize in?\"\n"
-            "   - \"What's your unique value proposition or career focus?\"\n"
-            "   - \"Any certifications, specializations, or notable achievements?\"\n"
-            "8. Return a JSON object with:\n"
+            "   f. Achievements/responsibilities (if not provided, ask; if provided, elaborate don't ask for metrics)\n"
+            "9. Key Pattern - Achievement Elaboration (NOT asking for more):\n"
+            "   - User provides: 'Collaborated directly with clients and stakeholders to gather and refine requirements, ensuring business alignment and technical feasibility.'\n"
+            "   - YOU SHOULD: 'I've captured this as: \"Collaborated directly with clients and stakeholders to gather and refine requirements, ensuring business alignment and technical feasibility, while maintaining alignment with enterprise compliance standards and delivering 100% on-time project milestones\"'\n"
+            "   - YOU SHOULD NOT: 'Could you share specific metrics like faster delivery or improved satisfaction?'\n"
+            "10. Return a JSON object with:\n"
             '   - "reply": your friendly message acknowledging what you captured + asking for the next missing field\n'
             '   - "cvUpdate": extracted CV fields from this message (or empty {} if only asking for info)\n'
             '   - "nextQuestion": specific follow-up question for the next critical missing field\n'
@@ -245,6 +261,9 @@ class PromptService:
         """
         Analyze CV and identify areas needing elaboration.
         Returns (question, field_type) tuple for the most important elaboration needed.
+        
+        NOTE: This method only returns suggestions for MISSING fields, not for minimal/vague fields.
+        Minimal achievements/summaries are handled by the main conversation system which elaborates them.
         """
         import json as json_lib
         
@@ -253,29 +272,37 @@ class PromptService:
         except:
             return None, None
 
-        # Check professional summary first (highest priority)
-        personal_info = cv_data.get('personalInfo', {})
-        if personal_info:
-            summary = personal_info.get('summary', '')
-            if self._is_professional_summary_minimal(summary):
-                return (
-                    "I noticed your professional summary is quite brief. Could you help me elaborate on it? "
-                    "What are your core technical expertise areas and specializations? What methodologies or architectural approaches do you specialize in? "
-                    "What makes you unique in your field?",
-                    'professional_summary'
-                )
-
-        # Check work experience achievements
+        # Check for completely missing critical fields (not just minimal ones)
         experience = cv_data.get('experience', [])
         for exp in experience:
-            achievements = exp.get('achievements', [])
-            if self._are_achievements_minimal(achievements):
-                company = exp.get('company', 'this role')
+            # Check for missing dates
+            if not exp.get('startDate') or not exp.get('endDate'):
                 return (
-                    f"For your experience at {company}, could you share more specific accomplishments? "
-                    f"What measurable impact did you have? Any metrics you improved (performance, users, cost)? "
-                    f"What was the scale of your impact (users affected, team size, budget)?",
-                    'achievements'
+                    "I noticed your work experience is missing employment dates. "
+                    "Could you provide the start and end dates for this position? (e.g., 'January 2020 to December 2022')",
+                    'employment_dates'
+                )
+            
+            # Check for missing project information
+            if not exp.get('projectName') or not exp.get('projectInformation'):
+                return (
+                    "To make your experience more specific, could you share the project name and what the project involved? "
+                    "(e.g., 'Project: Order Management System - Developed a cloud-native order processing platform')",
+                    'project_info'
+                )
+            
+            # Check for missing client
+            if not exp.get('clients'):
+                return (
+                    "Could you mention which client or company you worked for in this project?",
+                    'clients'
+                )
+            
+            # Check for missing technologies
+            if not exp.get('technology') or len(exp.get('technology', [])) == 0:
+                return (
+                    "What technologies or tools did you use in this project? (e.g., 'Java, Spring Boot, Angular, PostgreSQL')",
+                    'technology'
                 )
 
         return None, None

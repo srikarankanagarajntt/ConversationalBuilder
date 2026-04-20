@@ -46,9 +46,10 @@ async def download_file(
 ):
     """Stream the generated export file to the client."""
     file_path, media_type, filename = export_service.get_file_path(file_id)
+    # RFC 5987 compliant Content-Disposition header with quoted filename
     return FileResponse(
         path=file_path,
         media_type=media_type,
         filename=filename,
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
