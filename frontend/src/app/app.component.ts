@@ -341,9 +341,10 @@ export class AppComponent implements OnInit {
       this.errorMessage = 'Invalid download URL.';
       return;
     }
-
+    this.loading = true;
     this.api.downloadFile(fileId).subscribe({
       next: (response: any) => {
+        this.loading = false;
         // Extract filename from Content-Disposition header
         // Supports formats:
         //   - attachment; filename="John_cv.pdf" (RFC 5987 - quoted)
@@ -378,6 +379,7 @@ export class AppComponent implements OnInit {
         URL.revokeObjectURL(url);
       },
       error: () => {
+        this.loading = false;
         this.errorMessage = `Failed to download ${format.toUpperCase()} file.`;
       },
     });
