@@ -179,6 +179,13 @@
   font-size: 13px;
 }
 
+.preview-btn {
+  background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+  color: white;
+  align-items: center;
+  justify-content: center;
+}
+
 .sidebar-overlay {
   display: none;
   position: fixed;

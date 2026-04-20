@@ -1119,7 +1119,7 @@ export class AppComponent implements OnInit {
       case 'edit': // Edit
         return this.cvData?.personalInfo?.fullName !== '' && this.cvData?.personalInfo?.fullName !== undefined;
       case 'preview': // Preview
-        return this.cvData?.experience?.length > 0;
+        return this.cvData?.experience?.length > 0 && this.getFieldsProgress() >= 100;
       case 'template': // Template
         return this.selectedTemplateId !== null;
       case 'download': // Download - only complete after file is downloaded
