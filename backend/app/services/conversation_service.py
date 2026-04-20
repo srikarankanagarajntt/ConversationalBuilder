@@ -10,6 +10,7 @@ from app.services.llm_service import LLMService
 from app.services.prompt_service import PromptService
 from app.services.cv_schema_service import CvSchemaService
 from app.services.validation_service import ValidationService
+from app.services.technical_skills_service import TechnicalSkillsService
 
 
 class ConversationService:
@@ -19,6 +20,7 @@ class ConversationService:
         self._prompts = PromptService()
         self._cv_schema = CvSchemaService()
         self._validation = ValidationService()
+        self._technical_skills = TechnicalSkillsService()
 
     async def handle_message(self, session_id: str, user_message: str) -> ConversationResponse:
         """

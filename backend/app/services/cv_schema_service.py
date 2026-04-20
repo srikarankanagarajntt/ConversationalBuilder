@@ -48,6 +48,7 @@ class CvSchemaService:
         """
         Merge a single list item (e.g., experience entry) by preserving existing fields
         and only updating fields that are non-empty in the patch.
+        Normalizes field types (e.g., converts list clients to string).
         """
         result = dict(base_item)
         for key, value in patch_item.items():
@@ -57,4 +58,19 @@ class CvSchemaService:
             elif value not in (None, "", [], {}):
                 result[key] = value
             # If value is empty/None/empty list, keep the existing value
+        
+        # Normalize field types for experience entries
+        result = self._normalize_experience_entry(result)
         return result
+
+    def _normalize_experience_entry(self, entry: dict) -> dict:
+        """Normalize experience entry fields to expected types."""
+        # Fields that should be strings but might come as lists
+        string_fields = ['clients', 'projectName', 'projectInformation', 'description', 'company', 'title', 'role']
+        
+        for field in string_fields:
+            if field in entry and isinstance(entry[field], list):
+                # Convert list to comma-separated string
+                entry[field] = ", ".join(str(item).strip() for item in entry[field] if item)
+        
+        return entry
