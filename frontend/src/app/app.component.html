@@ -183,7 +183,7 @@
     <!-- Main Chat Area -->
     <div class="chat-main">
       <!-- Conversation History -->
-      <div class="conversation-area">
+      <div class="conversation-area" #messagesArea>
         <div class="messages-container" id="messagesContainer">
           <div *ngFor="let msg of conversationHistory" [ngClass]="'message ' + msg.role">
             <div class="message-bubble">
