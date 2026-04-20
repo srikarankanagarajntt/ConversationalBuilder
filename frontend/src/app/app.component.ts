@@ -1,4 +1,4 @@
-import { Component, OnInit, SecurityContext } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, OnInit, SecurityContext, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule, HttpClient } from '@angular/common/http';
@@ -81,7 +81,9 @@ export class AppComponent implements OnInit {
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
 
-  constructor(private readonly api: CvApiService, private readonly http: HttpClient, private readonly sanitizer: DomSanitizer) {}
+  @ViewChild('messagesArea', { static: false }) messagesArea!: ElementRef;
+
+  constructor(private readonly api: CvApiService, private readonly http: HttpClient, private readonly sanitizer: DomSanitizer, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.createSessionOnLoad();
@@ -104,6 +106,7 @@ export class AppComponent implements OnInit {
           content: "Hello! I'm your AI CV Assistant. Let's build your professional CV together. Upload a resume or say Hi to continue!",
           timestamp: new Date(),
         });
+        this.scrollToBottom();
       },
       error: () => {
         this.errorMessage = 'Failed to create session. Please refresh the page.';
@@ -125,6 +128,7 @@ export class AppComponent implements OnInit {
       content: userMessage,
       timestamp: new Date(),
     });
+    this.scrollToBottom();
 
     this.loading = true;
     this.errorMessage = '';
@@ -148,6 +152,7 @@ export class AppComponent implements OnInit {
         }
         
         this.loading = false;
+        this.scrollToBottom();
       },
       error: () => {
         this.errorMessage = 'Failed to send message.';
@@ -208,6 +213,7 @@ export class AppComponent implements OnInit {
 
   private stopRecording(): void {
     if (this.mediaRecorder && this.recording) {
+      this.recording = false;
       this.mediaRecorder.stop();
     }
   }
@@ -236,6 +242,8 @@ export class AppComponent implements OnInit {
         this.missingFields = res.missingFields;
         this.cvData = (res as any).cvDraft || null;
         this.loading = false;
+        this.scrollToBottom();
+        this.cdr.detectChanges();
       },
       error: () => {
         this.errorMessage = 'Failed to process voice message.';
@@ -339,9 +347,10 @@ export class AppComponent implements OnInit {
       this.errorMessage = 'Invalid download URL.';
       return;
     }
-
+    this.loading = true;
     this.api.downloadFile(fileId).subscribe({
       next: (response: any) => {
+        this.loading = false;
         // Extract filename from Content-Disposition header
         // Supports formats:
         //   - attachment; filename="John_cv.pdf" (RFC 5987 - quoted)
@@ -376,6 +385,7 @@ export class AppComponent implements OnInit {
         URL.revokeObjectURL(url);
       },
       error: () => {
+        this.loading = false;
         this.errorMessage = `Failed to download ${format.toUpperCase()} file.`;
       },
     });
@@ -497,6 +507,7 @@ export class AppComponent implements OnInit {
           timestamp: new Date(),
         });
         
+
         this.scrollToBottom();
       },
     });
@@ -692,6 +703,8 @@ export class AppComponent implements OnInit {
       if (messagesContainer) {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
       }
+
+      this.messagesArea.nativeElement.scrollTop = this.messagesArea.nativeElement.scrollHeight
     }, 100);
   }
 
@@ -957,6 +970,7 @@ export class AppComponent implements OnInit {
           content: `Template "${this.selectedTemplateId}" has been selected for your CV.`,
           timestamp: new Date(),
         });
+        this.scrollToBottom();
       },
       error: () => {
         this.errorMessage = 'Failed to select template.';
@@ -1067,6 +1081,7 @@ export class AppComponent implements OnInit {
         this.formErrors = { fullName: '', email: '', phone: '', location: '', summary: '', skills: '' };
         
         this.loading = false;
+        this.scrollToBottom();
       },
       error: () => {
         this.errorMessage = 'Failed to save personal information.';
