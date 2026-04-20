@@ -135,22 +135,8 @@ class ConversationService:
             if not professional_summary:
                 professional_summary = [cleaned_summary]
 
-        # Categorize skills into primary and secondary
-        technical_skills = {"primary": [], "secondary": []}
-        if skills:
-            # First half as primary, second half as secondary
-            midpoint = len(skills) // 2 + 1
-            for i, skill in enumerate(skills):
-                if i < midpoint:
-                    technical_skills["primary"].append({
-                        "skillName": skill,
-                        "proficiency": "advanced"
-                    })
-                else:
-                    technical_skills["secondary"].append({
-                        "skillName": skill,
-                        "proficiency": "intermediate"
-                    })
+        # Categorize skills into primary and secondary using intelligent role detection with LLM fallback
+        technical_skills = await self._technical_skills.categorize_skills_async(summary, skills)
 
         # Build personal info update
         cv_update = {

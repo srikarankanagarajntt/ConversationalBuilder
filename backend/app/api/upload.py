@@ -10,6 +10,7 @@ from app.services.cv_schema_service import CvSchemaService
 from app.services.llm_service import LLMService
 from app.services.state_service import StateService
 from app.services.validation_service import ValidationService
+from app.services.technical_skills_service import TechnicalSkillsService
 
 router = APIRouter()
 state_service = StateService()
@@ -17,6 +18,7 @@ cv_schema_service = CvSchemaService()
 validation_service = ValidationService()
 file_parser_service = FileParserService()
 llm_service = LLMService()
+technical_skills_service = TechnicalSkillsService()
 
 
 @router.post("/cv", response_model=UploadCvResponse)
@@ -81,8 +83,8 @@ async def upload_cv(
     # Get session
     session = state_service.get_session(sessionId)
 
-    # Map extracted data to canonical CvSchema
-    updated_cv = _map_to_cv_schema(session.cvDraft, extracted_data)
+    # Map extracted data to canonical CvSchema with intelligent skill generation
+    updated_cv = await _map_to_cv_schema(session.cvDraft, extracted_data, technical_skills_service)
 
     # Get missing fields
     missing_fields = validation_service.get_missing_fields(updated_cv)
@@ -97,9 +99,10 @@ async def upload_cv(
     )
 
 
-def _map_to_cv_schema(base_cv: CvSchema, extracted_data: dict) -> CvSchema:
+async def _map_to_cv_schema(base_cv: CvSchema, extracted_data: dict, technical_skills_service: TechnicalSkillsService) -> CvSchema:
     """
-    Map extracted LLM data to canonical CvSchema.
+    Map extracted LLM data to canonical CvSchema with intelligent skill generation.
+    Uses TechnicalSkillsService to generate 7 primary + 7 secondary skills.
     """
     # Create personal info from header
     header = extracted_data.get("header", {})
@@ -156,25 +159,44 @@ def _map_to_cv_schema(base_cv: CvSchema, extracted_data: dict) -> CvSchema:
             )
         )
 
-    # Extract skills
-    skills = []
-    technical_skills = extracted_data.get("technicalSkills", {})
-    for skill in technical_skills.get("primary", []):
-        skills.append(skill.get("skill_name", ""))
-    for skill in technical_skills.get("secondary", []):
-        skills.append(skill.get("skill_name", ""))
+    # Extract skills from both extracted technical skills and basic skills list
+    extracted_skills = []
+    technical_skills_raw = extracted_data.get("technicalSkills", {})
+    for skill in technical_skills_raw.get("primary", []):
+        extracted_skills.append(skill.get("skill_name", ""))
+    for skill in technical_skills_raw.get("secondary", []):
+        extracted_skills.append(skill.get("skill_name", ""))
+    
+    # Get professional summary for intelligent skill generation
+    professional_summary = "\n".join(extracted_data.get("professionalSummary", []))
+    
+    # Use TechnicalSkillsService to intelligently generate 7 primary + 7 secondary skills
+    # This works for any professional role (preset or custom)
+    if professional_summary and extracted_skills:
+        technical_skills_generated = await technical_skills_service.categorize_skills_async(
+            professional_summary, 
+            extracted_skills
+        )
+        normalized_technical_skills = technical_skills_generated
+    else:
+        # Fallback to basic normalization if no summary/skills
+        normalized_technical_skills = {}
+        for key in ["primary", "secondary"]:
+            if key in technical_skills_raw:
+                normalized_technical_skills[key] = [
+                    {
+                        "skillName": skill.get("skill_name", ""),
+                        "proficiency": skill.get("proficiency", "")
+                    }
+                    for skill in technical_skills_raw[key]
+                ]
 
-    # Normalize technical skills to camelCase
-    normalized_technical_skills = {}
-    for key in ["primary", "secondary"]:
-        if key in technical_skills:
-            normalized_technical_skills[key] = [
-                {
-                    "skillName": skill.get("skill_name", ""),
-                    "proficiency": skill.get("proficiency", "")
-                }
-                for skill in technical_skills[key]
-            ]
+    # Extract all skill names for basic skills list
+    skills = []
+    for skill_dict in normalized_technical_skills.get("primary", []):
+        skills.append(skill_dict.get("skillName", ""))
+    for skill_dict in normalized_technical_skills.get("secondary", []):
+        skills.append(skill_dict.get("skillName", ""))
 
     # Update and return CV schema
     base_cv.personalInfo = personal_info

@@ -59,6 +59,7 @@ class LLMService:
         """
         prompt = f"""
 You are an expert CV parser. Extract structured information from the following CV text and return it as JSON.
+IMPORTANT: When extracting professional summaries and achievements, always ELABORATE AND ENHANCE minimal details with relevant insights.
 
 CV Text:
 {raw_text}
@@ -73,7 +74,13 @@ Please extract the following information and format it as JSON with these exact 
     "phone": "string",
     "location": "string"
   }},
-  "professionalSummary": ["sentence1", "sentence2", ...],
+  "professionalSummary": [
+    "comprehensive summary sentence 1",
+    "expertise areas and specializations",
+    "methodologies and best practices",
+    "key achievements or focus areas",
+    "career objectives and value proposition"
+  ],
   "technicalSkills": {{
     "primary": [
       {{"skill_name": "skill1", "proficiency": "expert|advanced|intermediate|beginner"}},
@@ -95,8 +102,14 @@ Please extract the following information and format it as JSON with these exact 
       "projectInformation": "detailed project description and objectives",
       "clients": "client name/organization",
       "technology": ["tech1", "tech2", ...],
-      "project_description": "overall project/role description",
-      "achievements": ["responsibility1", "responsibility2", ...]
+      "project_description": "comprehensive role and project description",
+      "achievements": [
+        "key accomplishment 1 with context and impact",
+        "key accomplishment 2 with metrics or business value",
+        "challenge overcome with approach taken",
+        "technical excellence or innovation contributed",
+        "collaboration or leadership example"
+      ]
     }},
     ...
   ],
@@ -125,6 +138,23 @@ Extraction Rules:
 - Find email using regex patterns (look for patterns like name@domain.com)
 - Find phone number using common formats
 - Identify job title from professional titles mentioned
+
+CRITICAL INSTRUCTION - ELABORATION FOR MINIMAL DETAILS:
+- If professional summary is 1 sentence or very brief: Expand it to 4-5 comprehensive sentences by:
+  * Adding specific expertise areas and technologies
+  * Mentioning methodologies and best practices they follow
+  * Including years of experience and industry focus
+  * Describing their unique value proposition and approach
+  * Highlighting specializations within their role
+  EXAMPLE: If given "Full Stack Developer with 10 years Java and Angular"
+  EXPAND TO: [
+    "Full Stack Developer with 10+ years of specialized experience in enterprise Java backend development and modern Angular frontend frameworks.",
+    "Expert in designing and implementing microservices architectures, REST APIs, and scalable system design using Spring Boot, Quarkus, and modern cloud patterns.",
+    "Proficient in full-stack development combining backend expertise (Java, Spring, Hibernate, SQL) with frontend excellence (Angular, TypeScript, RxJS, responsive design).",
+    "Demonstrated ability to lead technical initiatives across entire development lifecycle while mentoring junior developers and establishing best practices in code quality and testing.",
+    "Strong focus on performance optimization, security hardening, and DevOps integration to deliver robust, production-ready applications."
+  ]
+
 - Extract all work experience entries with DETAILED extraction:
   * employer: Company/Organization name (REQUIRED)
   * position: Job title/designation (REQUIRED)
@@ -136,7 +166,20 @@ Extraction Rules:
   * clients: CRITICAL - Look for "Client:" labels, client names in parentheses, or organization names
   * technology: CRITICAL - Look for tech stacks, comma-separated lists of tools/languages (Angular, React, Java, Python, AWS, etc.)
   * project_description: Comprehensive description of the work and responsibilities
-  * achievements: List of key responsibilities, accomplishments, and contributions
+  * achievements: CRITICAL - Extract and ELABORATE on achievements:
+    - Look for bullet points, responsibilities, or accomplishment statements
+    - For EACH achievement found or inferred:
+      * Add context about the task/project/challenge
+      * Include business impact, metrics, or results (e.g., "improved performance by 40%", "served 500+ users")
+      * Mention technologies or methodologies used
+      * Reference scale/scope (team size, project size, user base, etc.)
+      * If vague, infer reasonable details from role/company context
+    - Generate 5-7 elaborated achievement statements per work experience entry
+    - Format: "[ACTION] [TASK] [TECHNOLOGY/APPROACH] [IMPACT/RESULT] [SCOPE/CONTEXT]"
+    - Examples:
+      "Architected microservices infrastructure using Spring Boot and Docker, reducing deployment time by 60% and enabling 10x faster release cycles"
+      "Implemented Angular-based responsive UI serving 500K+ daily active users across web and mobile platforms with sub-100ms load times"
+      "Led technical initiative to migrate legacy monolith to cloud-native architecture, resulting in $2M annual infrastructure cost reduction"
 - For work experience sections: Look for structured data with dates (Month YYYY – Month YYYY format), look for bullets with responsibilities, look for lines with company name and position
 - Extract summary/objective section and split into logical sentences
 - Parse skills section and categorize into primary (most important) and secondary
