@@ -28,6 +28,7 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 # Master template path
 TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "template")
 MASTER_TEMPLATE = os.path.join(TEMPLATE_DIR, "NTT_DATA_Master_Templates.docx")
+PPT_BODY_FONT_SIZE = 15
 
 
 class ExportService:
@@ -973,7 +974,7 @@ class ExportService:
 
                 if shape_name == "experience_box":
                     self._set_experience_shape_with_bullets(shape, experiences)
-                    self._apply_text_style(shape)
+                    self._apply_text_style(shape, font_size_pt=PPT_BODY_FONT_SIZE)
                     continue
                 elif shape_name == "profile_box":
                     self._set_profile_shape(shape, profile_data)
@@ -997,12 +998,12 @@ class ExportService:
                     if shape_name == "header_box":
                         self._apply_text_style(shape, font_size_pt=16, bold=True)
                     else:
-                        self._apply_text_style(shape)
+                        self._apply_text_style(shape, font_size_pt=PPT_BODY_FONT_SIZE)
                 elif shape_name in shape_fallbacks:
                     if shape_name == "header_box":
                         self._apply_text_style(shape, font_size_pt=16, bold=True)
                     else:
-                        self._apply_text_style(shape)
+                        self._apply_text_style(shape, font_size_pt=PPT_BODY_FONT_SIZE)
 
     def _set_experience_shape_with_bullets(self, shape: Any, experiences: List[Dict[str, str]]) -> None:
         """Render professional experience as bullet points."""
@@ -1067,17 +1068,17 @@ class ExportService:
         if contact:
             p = _next_paragraph()
             p.text = contact
-            self._apply_paragraph_style(p, font_size_pt=9, bold=True)
+            self._apply_paragraph_style(p, font_size_pt=PPT_BODY_FONT_SIZE, bold=True)
 
         if summary:
             p = _next_paragraph()
             p.text = summary
-            self._apply_paragraph_style(p, font_size_pt=9, bold=False)
+            self._apply_paragraph_style(p, font_size_pt=PPT_BODY_FONT_SIZE, bold=False)
 
         if languages:
             p = _next_paragraph()
             p.text = f"LANGUAGES: {languages}"
-            self._apply_paragraph_style(p, font_size_pt=9, bold=False)
+            self._apply_paragraph_style(p, font_size_pt=PPT_BODY_FONT_SIZE, bold=False)
 
     def _set_skills_shape(self, shape: Any, skills_data: Dict[str, str]) -> None:
         """Render skills block with bold section labels."""
@@ -1101,29 +1102,29 @@ class ExportService:
 
         p = _next_paragraph()
         p.text = "PRIMARY:"
-        self._apply_paragraph_style(p, font_size_pt=9, bold=True)
+        self._apply_paragraph_style(p, font_size_pt=PPT_BODY_FONT_SIZE, bold=True)
         if primary_skills:
             p = _next_paragraph()
             p.text = primary_skills
-            self._apply_paragraph_style(p, font_size_pt=9, bold=False)
+            self._apply_paragraph_style(p, font_size_pt=PPT_BODY_FONT_SIZE, bold=False)
 
         p = _next_paragraph()
         p.text = "SECONDARY:"
-        self._apply_paragraph_style(p, font_size_pt=9, bold=True)
+        self._apply_paragraph_style(p, font_size_pt=PPT_BODY_FONT_SIZE, bold=True)
         if secondary_skills:
             p = _next_paragraph()
             p.text = secondary_skills
-            self._apply_paragraph_style(p, font_size_pt=9, bold=False)
+            self._apply_paragraph_style(p, font_size_pt=PPT_BODY_FONT_SIZE, bold=False)
 
         p = _next_paragraph()
         p.text = "CERTIFICATIONS:"
-        self._apply_paragraph_style(p, font_size_pt=9, bold=True)
+        self._apply_paragraph_style(p, font_size_pt=PPT_BODY_FONT_SIZE, bold=True)
         if certifications:
             p = _next_paragraph()
             p.text = certifications
-            self._apply_paragraph_style(p, font_size_pt=9, bold=False)
+            self._apply_paragraph_style(p, font_size_pt=PPT_BODY_FONT_SIZE, bold=False)
 
-    def _apply_paragraph_style(self, paragraph: Any, font_size_pt: int = 9, bold: bool = False) -> None:
+    def _apply_paragraph_style(self, paragraph: Any, font_size_pt: int = PPT_BODY_FONT_SIZE, bold: bool = False) -> None:
         try:
             from pptx.dml.color import RGBColor
             from pptx.util import Pt
@@ -1143,7 +1144,7 @@ class ExportService:
                 run.font.bold = bool(bold)
                 run.font.color.rgb = RGBColor(0, 0, 0)
 
-    def _apply_text_style(self, shape: Any, font_size_pt: int = 9, bold: Any = None) -> None:
+    def _apply_text_style(self, shape: Any, font_size_pt: int = PPT_BODY_FONT_SIZE, bold: Any = None) -> None:
         """Apply Calibri 9pt black style for generated text."""
         try:
             from pptx.dml.color import RGBColor
