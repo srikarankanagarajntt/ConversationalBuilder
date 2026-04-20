@@ -1,4 +1,4 @@
-import { Component, OnInit, SecurityContext } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, SecurityContext } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule, HttpClient } from '@angular/common/http';
@@ -81,7 +81,7 @@ export class AppComponent implements OnInit {
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
 
-  constructor(private readonly api: CvApiService, private readonly http: HttpClient, private readonly sanitizer: DomSanitizer) {}
+  constructor(private readonly api: CvApiService, private readonly http: HttpClient, private readonly sanitizer: DomSanitizer, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.createSessionOnLoad();
@@ -208,6 +208,7 @@ export class AppComponent implements OnInit {
 
   private stopRecording(): void {
     if (this.mediaRecorder && this.recording) {
+      this.recording = false;
       this.mediaRecorder.stop();
     }
   }
@@ -236,6 +237,7 @@ export class AppComponent implements OnInit {
         this.missingFields = res.missingFields;
         this.cvData = (res as any).cvDraft || null;
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: () => {
         this.errorMessage = 'Failed to process voice message.';
