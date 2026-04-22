@@ -64,8 +64,11 @@ class ConversationService:
             for m in session.conversationHistory[-20:]
         ]
 
+        # Compute missing fields BEFORE building prompt so LLM knows what to ask for
+        missing_fields = self._validation.get_missing_fields(session.cvDraft)
+
         cv_json = session.cvDraft.model_dump_json(indent=2)
-        messages = self._prompts.build_conversation_prompt(history, cv_json, user_message)
+        messages = self._prompts.build_conversation_prompt(history, cv_json, user_message, missing_fields)
 
         raw_response = await self._llm.chat(messages, response_format="json_object")
 

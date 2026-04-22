@@ -46,6 +46,7 @@ export class AppComponent implements OnInit {
   showPersonalInfoModal = false;
   showExportModal = false;
   pendingExportFormat: 'pdf' | 'docx' | 'pptx' | 'json' | null = null;
+  selectedLanguage: string = 'en'; // Language for export (en=English, de=German)
   cvData: any = null;
   templates: TemplateWithPreview[] = [];
   selectedTemplateId: string | null = null;
@@ -220,34 +221,54 @@ export class AppComponent implements OnInit {
 
   private sendVoiceMessage(audioBlob: Blob): void {
     this.loading = true;
+    this.cdr.detectChanges(); // Force immediate UI update to show loader
     this.errorMessage = '';
 
     this.api.sendVoiceMessage(this.sessionId, audioBlob).subscribe({
       next: (res: ConversationResponse) => {
         this.transcript = res.transcript ?? '';
-        this.assistantReply = res.reply;
         
-        // Add voice message and reply to conversation
+        // Add voice transcript to conversation
         this.conversationHistory.push({
           role: 'user',
           content: this.transcript,
           timestamp: new Date(),
         });
-        this.conversationHistory.push({
-          role: 'assistant',
-          content: this.assistantReply,
-          timestamp: new Date(),
-        });
 
-        this.missingFields = res.missingFields;
-        this.cvData = (res as any).cvDraft || null;
-        this.loading = false;
-        this.scrollToBottom();
-        this.cdr.detectChanges();
+        // Immediately send transcript to message API for processing
+        if (this.transcript.trim()) {
+          this.api.sendMessage(this.sessionId, this.transcript).subscribe({
+            next: (messageRes: ConversationResponse) => {
+              this.assistantReply = messageRes.reply;
+              
+              // Add assistant reply to conversation
+              this.conversationHistory.push({
+                role: 'assistant',
+                content: this.assistantReply,
+                timestamp: new Date(),
+              });
+
+              this.missingFields = messageRes.missingFields;
+              this.cvData = (messageRes as any).cvDraft || null;
+              this.loading = false;
+              this.scrollToBottom();
+              this.cdr.detectChanges();
+            },
+            error: () => {
+              this.errorMessage = 'Failed to process transcript.';
+              this.loading = false;
+              this.cdr.detectChanges();
+            },
+          });
+        } else {
+          this.loading = false;
+          this.cdr.detectChanges();
+        }
       },
       error: () => {
         this.errorMessage = 'Failed to process voice message.';
         this.loading = false;
+        this.cdr.detectChanges();
       },
     });
   }
@@ -288,6 +309,49 @@ export class AppComponent implements OnInit {
       .trim();
   }
 
+  formatMessageContent(content: string): any {
+    if (!content) return '';
+    
+    // Escape HTML first
+    let html = content
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+    
+    // Convert formatted text to HTML
+    // Handle [NEXT] headers with content
+    html = html.replace(/\[NEXT\](.*?)(?=(?:\n✓|\n\-|$))/gs, '<div class="msg-next-header">[NEXT]</div><div class="msg-next-content">$1</div>');
+    
+    // Handle ✓ checkmarks
+    html = html.replace(/✓\s+/g, '<span class="msg-checkmark">✓</span> ');
+    
+    // Handle bullet points with hyphens
+    html = html.replace(/\n\-\s+/g, '\n<li class="msg-bullet"> ');
+    html = html.replace(/(<li[^>]*>.*?)(\n(?![<]))/g, '$1</li>$2');
+    
+    // Wrap remaining lines in paragraphs
+    const lines = html.split('\n');
+    let result = '';
+    for (const line of lines) {
+      if (line.trim()) {
+        if (!line.includes('<div') && !line.includes('<li')) {
+          result += '<p class="msg-paragraph">' + line + '</p>';
+        } else {
+          result += line;
+        }
+      } else {
+        result += '<br/>';
+      }
+    }
+    
+    // Clean up multiple br tags
+    result = result.replace(/<br\/><br\/>/g, '<br/>');
+    
+    return this.sanitizer.bypassSecurityTrustHtml(result);
+  }
+
   playAssistantReply(): void {
     if (!this.assistantReply.trim()) {
       this.errorMessage = 'No assistant message to play.';
@@ -306,10 +370,15 @@ export class AppComponent implements OnInit {
       return;
     }
 
+    if (!this.selectedTemplateId) {
+      this.errorMessage = 'Please select a template first.';
+      return;
+    }
+
     // Trigger actual download
     this.loading = true;
     this.errorMessage = '';
-    this.api.exportCv(this.sessionId, format).subscribe({
+    this.api.exportCv(this.sessionId, format, this.selectedTemplateId, this.selectedLanguage).subscribe({
       next: (res: { jobId: string; downloadUrl: string }) => {
         this.downloadFile(res.downloadUrl, format);
         this.closeExportModal();

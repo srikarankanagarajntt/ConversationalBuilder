@@ -201,7 +201,7 @@
                   <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
                 </svg>
               </div>
-              <div class="message-content">{{ msg.content }}</div>
+              <div class="message-content" [innerHTML]="formatMessageContent(msg.content)"></div>
             </div>
           </div>
 
@@ -294,10 +294,6 @@
       <div class="preview-header">
         <h2>CV Preview</h2>
         <div class="preview-header-end">
-          <select (change)="onLanguageChange($event)">
-            <option value="english">En</option>
-            <option value="germany">De</option>
-          </select>
           <button class="close-btn" (click)="closeCvPreview()">×</button>
         </div>
       </div>
@@ -599,7 +595,16 @@
     <div class="modal-content export-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Export Options</h2>
-        <button class="close-btn" (click)="closeExportModal()">×</button>
+        <div class="export-header-controls">
+          <div class="language-selector">
+            <label for="languageSelect">Language:</label>
+            <select id="languageSelect" [(ngModel)]="selectedLanguage" class="language-dropdown">
+              <option value="en">English</option>
+              <option value="de">Deutsch (German)</option>
+            </select>
+          </div>
+          <button class="close-btn" (click)="closeExportModal()">×</button>
+        </div>
       </div>
       <div class="modal-body export-modal-body">
         <div class="export-options-grid">

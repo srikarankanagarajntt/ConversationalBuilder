@@ -667,6 +667,81 @@
   border-radius: 4px 12px 12px 12px;
 }
 
+/* Formatted Message Content Styles */
+.message-content p {
+  margin: 0 0 8px 0;
+  line-height: 1.6;
+}
+
+.message-content p:last-child {
+  margin-bottom: 0;
+}
+
+.msg-paragraph {
+  margin: 8px 0 !important;
+}
+
+.msg-checkmark {
+  color: #27ae60;
+  font-weight: 600;
+}
+
+.msg-next-header {
+  font-weight: 700;
+  color: #0066cc;
+  margin: 12px 0 4px 0;
+  font-size: 14px;
+}
+
+.msg-next-content {
+  padding-left: 12px;
+  border-left: 3px solid #0066cc;
+  margin: 8px 0;
+}
+
+.message-content ul,
+.message-content li {
+  margin: 4px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.message-content li {
+  margin-left: 20px;
+  position: relative;
+}
+
+.message-content li:before {
+  content: "•";
+  position: absolute;
+  left: -12px;
+  color: #0066cc;
+  font-weight: bold;
+}
+
+/* Line breaks styling */
+.message-content br {
+  display: block;
+  content: "";
+  margin: 4px 0;
+}
+
+/* Bold text in messages */
+.message-content strong {
+  font-weight: 600;
+  color: #0066cc;
+}
+
+/* Links styling */
+.message-content a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+.message-content a:hover {
+  text-decoration: underline;
+}
+
 /* Loading Dots Animation */
 .loading-dots {
   display: flex !important;
@@ -903,6 +978,49 @@
   margin: 0;
   font-size: 20px;
   color: #333;
+  flex: 1;
+}
+
+.export-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+}
+
+.language-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.language-selector label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+}
+
+.language-dropdown {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 140px;
+}
+
+.language-dropdown:hover {
+  border-color: #999;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.language-dropdown:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
 }
 
 .close-btn {
