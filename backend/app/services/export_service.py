@@ -27,7 +27,8 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Master template path
 TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "template")
-MASTER_TEMPLATE = os.path.join(TEMPLATE_DIR, "NTT_DATA_Master_Templates.docx")
+# Default template (used when language-specific template is not available)
+DEFAULT_MASTER_TEMPLATE = os.path.join(TEMPLATE_DIR, "NTT_DATA_Master_Templates_en.docx")
 PPT_BODY_FONT_SIZE = 15
 
 
@@ -37,11 +38,21 @@ class ExportService:
         self._llm_service = None
 
     async def create_export_job(self, cv: CvSchema, fmt: str, template_id: str = "ntt-classic", language: str = "en") -> Dict[str, Any]:
-        """Generate the file synchronously (POC) and store the job record."""
+        """Generate the file synchronously (POC) and store the job record.
+
+        Args:
+            cv: CV schema to export
+            fmt: Format (json, docx, pdf, ppt)
+            template_id: Template identifier
+            language: Language code for content translation and template selection
+
+        Returns:
+            Job record with status and download URL
+        """
         job_id = str(uuid.uuid4())
         file_id = str(uuid.uuid4())
         
-        # Translate CV if needed
+        # Translate CV if language is not English
         if language and language != "en":
             try:
                 cv = self.translation_service.translate_cv(cv, language)
@@ -55,11 +66,11 @@ class ExportService:
                 media_type = "application/json"
                 filename = f"{cv.personalInfo.fullName}_cv.json"
             elif fmt == "docx":
-                file_path = self._export_docx(cv, file_id, template_id)
+                file_path = self._export_docx(cv, file_id, template_id, language)
                 media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 filename = f"{cv.personalInfo.fullName}_cv.docx"
             elif fmt == "pdf":
-                file_path = self._export_pdf(cv, file_id, template_id)
+                file_path = self._export_pdf(cv, file_id, template_id, language)
                 media_type = "application/pdf"
                 filename = f"{cv.personalInfo.fullName}_cv.pdf"
             elif fmt in ("ppt", "pptx"):
@@ -109,11 +120,11 @@ class ExportService:
             json.dump(cv.model_dump(), f, indent=2)
         return path
 
-    def _export_docx(self, cv: CvSchema, file_id: str, template_id: str = "ntt-classic") -> str:
-        """Export CV as DOCX using template rendering."""
+    def _export_docx(self, cv: CvSchema, file_id: str, template_id: str = "ntt-classic", language: str = "en") -> str:
+        """Export CV as DOCX using template rendering with language-specific template."""
         try:
             # Render from template
-            rendered_docx_path = self._render_docx_from_template(cv, template_id)
+            rendered_docx_path = self._render_docx_from_template(cv, template_id, language)
 
             # Verify the rendered file exists and has content
             if not os.path.exists(rendered_docx_path):
@@ -154,11 +165,11 @@ class ExportService:
                 detail=f"DOCX rendering failed: {str(e)}"
             )
 
-    def _export_pdf(self, cv: CvSchema, file_id: str, template_id: str = "ntt-classic") -> str:
-        """Export CV as PDF (via DOCX rendering + conversion)."""
+    def _export_pdf(self, cv: CvSchema, file_id: str, template_id: str = "ntt-classic", language: str = "en") -> str:
+        """Export CV as PDF (via DOCX rendering + conversion) with language-specific template."""
         try:
-            # First render DOCX
-            docx_path = self._render_docx_from_template(cv, template_id)
+            # First render DOCX with language-specific template
+            docx_path = self._render_docx_from_template(cv, template_id, language)
 
             # Then convert to PDF
             pdf_path = os.path.join(OUTPUT_DIR, f"{file_id}.pdf")
@@ -175,8 +186,42 @@ class ExportService:
                 detail=f"PDF conversion failed: {str(e)}"
             )
 
-    def _render_docx_from_template(self, cv: CvSchema, template_id: str) -> str:
-        """Render DOCX from master template with Jinja2 placeholders."""
+    def _resolve_docx_template_path(self, language: str = "en") -> str:
+        """Resolve the DOCX template path based on language code.
+
+        Args:
+            language: Language code (e.g., 'en', 'de')
+
+        Returns:
+            Path to the language-specific template, fallback to English template
+        """
+        # Try to find language-specific template
+        language_template = os.path.join(TEMPLATE_DIR, f"NTT_DATA_Master_Templates_{language}.docx")
+
+        if os.path.exists(language_template):
+            return language_template
+
+        # Fallback to default English template
+        if os.path.exists(DEFAULT_MASTER_TEMPLATE):
+            return DEFAULT_MASTER_TEMPLATE
+
+        # If nothing found, raise error
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Master template not found for language '{language}' and fallback template not available"
+        )
+
+    def _render_docx_from_template(self, cv: CvSchema, template_id: str, language: str = "en") -> str:
+        """Render DOCX from master template with Jinja2 placeholders.
+
+        Args:
+            cv: CV schema to render
+            template_id: Template identifier (for future extensibility)
+            language: Language code for template selection (default: 'en')
+
+        Returns:
+            Path to rendered temporary DOCX file
+        """
         try:
             from docxtpl import DocxTemplate
         except ImportError:
@@ -185,16 +230,19 @@ class ExportService:
                 detail="docxtpl library not installed. Run: pip install docxtpl"
             )
 
-        # Check if master template exists
-        if not os.path.exists(MASTER_TEMPLATE):
+        # Resolve the appropriate template based on language
+        master_template = self._resolve_docx_template_path(language)
+
+        # Check if template exists
+        if not os.path.exists(master_template):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Master template not found: {MASTER_TEMPLATE}"
+                detail=f"Master template not found: {master_template}"
             )
 
         try:
             # Load template
-            doc = DocxTemplate(MASTER_TEMPLATE)
+            doc = DocxTemplate(master_template)
 
             # Prepare context for Jinja2 rendering
             context = self._prepare_template_context(cv)

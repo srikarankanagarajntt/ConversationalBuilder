@@ -90,7 +90,7 @@ class TemplateService:
             return
 
         # Load NTT DATA DOCX template
-        ntt_data_path = os.path.join(TEMPLATE_DIR, "NTT_DATA_Resume_Templates.docx")
+        ntt_data_path = os.path.join(TEMPLATE_DIR, "NTT_DATA_Master_Templates_en.docx")
         TEMPLATES[0].fileBase64 = _load_file_as_base64(ntt_data_path)
         
         # Try to load NTT DATA preview image
