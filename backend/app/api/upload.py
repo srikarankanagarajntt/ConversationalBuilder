@@ -50,6 +50,44 @@ async def upload_cv(
     raw_bytes = await file.read()
     content_type = file.content_type or ""
 
+    # Enforce max 10 pages for PDF uploads
+    if file_extension == ".pdf":
+        try:
+            import io
+            import PyPDF2
+
+            reader = PyPDF2.PdfReader(io.BytesIO(raw_bytes))
+            page_count = len(reader.pages)
+            if page_count > 10:
+                raise HTTPException(
+                    status_code=400,
+                    detail={
+                        "error": {
+                            "code": "FILE_PAGE_LIMIT_EXCEEDED",
+                            "message": f"Maximum allowed pages is 10. Uploaded file has {page_count} pages.",
+                            "details": [
+                                {
+                                    "field": "file",
+                                    "issue": f"PDF contains {page_count} pages (max 10 allowed)"
+                                }
+                            ]
+                        }
+                    }
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": {
+                        "code": "FILE_PAGE_VALIDATION_ERROR",
+                        "message": f"Unable to validate PDF page count: {str(e)}",
+                        "details": []
+                    }
+                }
+            )
+
     # Extract text
     try:
         raw_text = await file_parser_service.extract_text(raw_bytes, content_type)
@@ -209,4 +247,3 @@ async def _map_to_cv_schema(base_cv: CvSchema, extracted_data: dict, technical_s
     base_cv.technicalSkills = normalized_technical_skills
 
     return base_cv
-

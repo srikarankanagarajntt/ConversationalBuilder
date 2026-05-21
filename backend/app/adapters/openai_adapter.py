@@ -14,9 +14,15 @@ class OpenAIAdapter:
     def __init__(self):
         cert_path = r"C:\Sri\NTTdata\AI\code\backend\certs\ca-root.crt"
         ssl_context = ssl.create_default_context(cafile=cert_path)
+        # Increase timeout to support large CV extraction requests
         http_client = httpx.AsyncClient(
             verify=ssl_context,
-            timeout=30.0,
+            timeout=httpx.Timeout(
+                timeout=240.0,  # total timeout
+                connect=240.0,
+                read=240.0,
+                write=240.0,
+            ),
         )
         self._client = AsyncOpenAI(api_key=settings.openai_api_key,
                                    http_client=http_client,)

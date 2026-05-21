@@ -57,9 +57,21 @@ class LLMService:
         Use LLM to extract structured CV data from raw text.
         Returns data in the format expected by CvSchema.
         """
+
+        # ✅ HARD LIMIT INPUT SIZE (prevents model truncation + broken JSON)
+        MAX_INPUT_CHARS = 15000  # safe upper bound to avoid token overflow
+        if len(raw_text) > MAX_INPUT_CHARS:
+            logger.warning(
+                "Raw CV text truncated from %d to %d characters to prevent LLM overflow.",
+                len(raw_text),
+                MAX_INPUT_CHARS,
+            )
+            raw_text = raw_text[:MAX_INPUT_CHARS]
+
         prompt = f"""
 You are an expert CV parser. Extract structured information from the following CV text and return it as JSON.
-IMPORTANT: When extracting professional summaries and achievements, always ELABORATE AND ENHANCE minimal details with relevant insights.
+IMPORTANT: Keep descriptions concise. Do NOT generate overly long achievement paragraphs.
+Ensure JSON is fully valid and properly closed.
 
 CV Text:
 {raw_text}
@@ -218,12 +230,39 @@ Return only valid JSON, no additional text.
 
         try:
             response = await self.chat(messages, response_format="json_object")
-            # Parse the JSON response
-            extracted_data = json.loads(response)
-            return extracted_data
-        except json.JSONDecodeError as e:
-            logger.error("Failed to parse LLM response as JSON: %s", e)
-            raise LLMServiceError(f"Invalid JSON response from LLM: {e}") from e
+
+            # First attempt: direct JSON parse
+            try:
+                return json.loads(response)
+            except json.JSONDecodeError as e:
+                logger.warning("Initial JSON parsing failed. Attempting recovery. Error: %s", e)
+
+                # Attempt recovery: extract first JSON object boundaries
+                start = response.find("{")
+                end = response.rfind("}")
+                if start != -1 and end != -1 and end > start:
+                    candidate = response[start:end + 1]
+                    try:
+                        return json.loads(candidate)
+                    except json.JSONDecodeError as inner_e:
+                        logger.error("Recovered JSON parsing still failed: %s", inner_e)
+
+                # Retry once with stricter instruction
+                retry_messages = [
+                    {
+                        "role": "system",
+                        "content": "Return ONLY valid JSON. Do not truncate. Ensure all strings are properly closed and escaped."
+                    },
+                    {"role": "user", "content": prompt}
+                ]
+
+                retry_response = await self.chat(retry_messages, response_format="json_object")
+                try:
+                    return json.loads(retry_response)
+                except json.JSONDecodeError as final_e:
+                    logger.error("Retry JSON parsing failed: %s", final_e)
+                    raise LLMServiceError(f"Invalid JSON response from LLM: {final_e}") from final_e
+
         except Exception as e:
             logger.error("LLM extraction failed: %s", str(e))
             raise
