@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import settings
 from app.core.logging_config import configure_logging
-from app.api import health, conversation, voice, upload, template, preview, export, llm
+from app.api import health, conversation, voice, upload, template, preview, export, llm, bulk_upload, bulk_export
 
 configure_logging()
 logger = logging.getLogger(__name__)
@@ -35,9 +35,11 @@ app.include_router(health.router, tags=["Health"])
 app.include_router(conversation.router, prefix="/api", tags=["Conversation"])
 app.include_router(voice.router, prefix="/api", tags=["Voice"])
 app.include_router(upload.router, prefix="/api/upload", tags=["Upload"])
+app.include_router(bulk_upload.router, prefix="/api/upload", tags=["Bulk Upload"])
 app.include_router(template.router, prefix="/api", tags=["Template"])
 app.include_router(preview.router, prefix="/api", tags=["Preview"])
 app.include_router(export.router, prefix="/api", tags=["Export"])
+app.include_router(bulk_export.router, prefix="/api", tags=["Bulk Export"])
 app.include_router(llm.router, prefix="/api", tags=["LLM POC"])
 
 

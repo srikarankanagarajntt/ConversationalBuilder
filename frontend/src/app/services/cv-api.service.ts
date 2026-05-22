@@ -123,4 +123,37 @@ export class CvApiService {
     formData.append('sessionId', sessionId);
     return this.http.post<any>(`${environment.apiBaseUrl}/upload/cv`, formData);
   }
+
+  uploadBulkCv(files: File[], sessionId: string): Observable<any> {
+    const formData = new FormData();
+    formData.append('sessionId', sessionId);
+    files.forEach((file) => {
+      formData.append('files', file);
+    });
+    return this.http.post<any>(`${environment.apiBaseUrl}/upload/bulk-cv`, formData);
+  }
+
+  startBulkExport(bulkId: string, format: string, templateId: string, language: string = 'en'): Observable<any> {
+    return this.http.post<any>(`${environment.apiBaseUrl}/export/bulk`, {
+      bulkId,
+      format,
+      templateId,
+      language,
+    });
+  }
+
+  getBulkExportStatus(bulkId: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiBaseUrl}/export/bulk/${bulkId}/status`);
+  }
+
+  downloadBulkFiles(bulkId: string): Observable<any> {
+    return this.http.get(`${environment.apiBaseUrl}/download/bulk/${bulkId}`, {
+      responseType: 'blob',
+      observe: 'response',
+    });
+  }
+
+  deleteBulkJob(bulkId: string): Observable<any> {
+    return this.http.delete<any>(`${environment.apiBaseUrl}/export/bulk/${bulkId}`);
+  }
 }

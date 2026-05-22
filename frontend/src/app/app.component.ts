@@ -51,6 +51,25 @@ export class AppComponent implements OnInit {
   templates: TemplateWithPreview[] = [];
   selectedTemplateId: string | null = null;
 
+  // Bulk processing properties
+  showBulkUploadModal = false;
+  showBulkExportModal = false;
+  bulkFiles: File[] = [];
+  bulkId: string | null = null;
+  bulkFileCount = 0;  // Track count of CVs - NOT dependent on bulkFiles array
+  bulkProcessing = false;
+  bulkProgress = 0;
+  bulkStatus = '';
+  bulkExportFormat: 'pdf' | 'docx' | 'pptx' | 'json' = 'pdf';
+  isBulkFlow = false;
+  private bulkPollInterval: ReturnType<typeof setInterval> | null = null;
+  private bulkDownloadStarted = false;
+
+  private getBulkZipFilename(): string {
+    const formatLabel = this.bulkExportFormat === 'pptx' ? 'ppt' : this.bulkExportFormat;
+    return `CV_NTTdata_${formatLabel}.zip`;
+  }
+
   // Personal info form fields
   personalFullName = '';
   personalEmail = '';
@@ -1021,15 +1040,36 @@ export class AppComponent implements OnInit {
   }
 
   selectTemplate(): void {
-    if (!this.sessionId || !this.selectedTemplateId) {
-      this.errorMessage = 'Please select a template first.';
+    console.log('🔵 [Select Template] Regular template selection called. Current state:', {
+      templateId: this.selectedTemplateId,
+      isBulkFlow: this.isBulkFlow,
+      bulkId: this.bulkId,
+      sessionId: this.sessionId
+    });
+    
+    // Safety check: If in bulk flow, should NOT be calling this method
+    if (this.isBulkFlow && this.bulkId && this.selectedTemplateId) {
+      console.warn('⚠️  [Select Template] WARNING: selectTemplate called while in bulk flow! Redirecting to selectBulkTemplate...');
+      this.selectBulkTemplate(this.selectedTemplateId);
       return;
     }
+    
+    if (!this.sessionId || !this.selectedTemplateId) {
+      this.errorMessage = 'Please select a template first.';
+      console.error('❌ [Select Template] Missing sessionId or selectedTemplateId');
+      return;
+    }
+
+    console.log('🔵 [Select Template] Selecting template (regular flow, not bulk):', {
+      templateId: this.selectedTemplateId,
+      isBulkFlow: this.isBulkFlow
+    });
 
     this.loading = true;
     this.errorMessage = '';
     this.api.selectTemplate(this.sessionId, this.selectedTemplateId).subscribe({
       next: () => {
+        console.log('✅ [Select Template] Template selected successfully');
         this.showTemplateModal = false;
         this.showCvPreview = false; // Close preview modal when template is selected
         this.errorMessage = '';
@@ -1043,15 +1083,39 @@ export class AppComponent implements OnInit {
       },
       error: () => {
         this.errorMessage = 'Failed to select template.';
+        console.error('❌ [Select Template] Error selecting template');
         this.loading = false;
       },
     });
   }
 
   closeTemplateModal(): void {
+    console.log('🔄 [Close Template Modal] Closing template modal. Current state:', {
+      isBulkFlow: this.isBulkFlow,
+      bulkId: this.bulkId,
+      selectedTemplateId: this.selectedTemplateId,
+      showTemplateModal: this.showTemplateModal
+    });
+    
     this.showTemplateModal = false;
-    this.selectedTemplateId = null;
+    
+    // IMPORTANT: Never clear bulk state when in bulk flow
+    // Only reset selectedTemplateId if NOT in bulk flow
+    if (!this.isBulkFlow) {
+      this.selectedTemplateId = null;
+    } else {
+      // In bulk flow - preserve ALL bulk state
+      console.log('⚠️  [Close Template Modal] In bulk flow - preserving bulk state');
+    }
+    
     this.errorMessage = '';
+    
+    console.log('✅ [Close Template Modal] Template modal closed. State after:', {
+      isBulkFlow: this.isBulkFlow,
+      bulkId: this.bulkId,
+      bulkFileCount: this.bulkFileCount,
+      selectedTemplateId: this.selectedTemplateId
+    });
   }
 
   openExportModal(): void {
@@ -1287,5 +1351,428 @@ export class AppComponent implements OnInit {
 
   onLanguageChange(event: any): void {
     console.log('Language changed to:', event.target.value);
+  }
+
+  // ─────────────────────────────── BULK PROCESSING ─────────────────────────────────
+
+  openBulkUploadModal(): void {
+    this.showBulkUploadModal = true;
+    this.bulkFiles = [];
+    this.errorMessage = '';
+  }
+
+  closeBulkUploadModal(): void {
+    this.showBulkUploadModal = false;
+    this.bulkFiles = [];
+    this.bulkId = null;
+    this.bulkStatus = '';
+    this.bulkProgress = 0;
+    this.errorMessage = '';
+  }
+
+  onBulkFileSelect(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = input.files;
+
+    if (!files) {
+      return;
+    }
+
+    // Add selected files to bulk array
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      
+      // Validate file type
+      const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+      if (!allowedTypes.includes(file.type)) {
+        this.errorMessage = `Invalid file type for ${file.name}. Only PDF, DOCX, or TXT allowed.`;
+        continue;
+      }
+
+      // Validate file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        this.errorMessage = `${file.name} exceeds 10MB limit.`;
+        continue;
+      }
+
+      this.bulkFiles.push(file);
+    }
+
+    // Reset input
+    input.value = '';
+  }
+
+  removeBulkFile(index: number): void {
+    this.bulkFiles.splice(index, 1);
+  }
+
+  async uploadBulkFiles(): Promise<void> {
+    if (this.bulkFiles.length === 0) {
+      this.errorMessage = 'Please select at least one file to upload.';
+      return;
+    }
+
+    if (!this.sessionId) {
+      this.errorMessage = 'Please start a new session first.';
+      return;
+    }
+
+    this.loading = true;
+    this.bulkProcessing = true;
+    this.bulkStatus = 'Uploading files...';
+    this.errorMessage = '';
+
+    this.api.uploadBulkCv(this.bulkFiles, this.sessionId).subscribe({
+      next: (response: any) => {
+        console.log('✅ [Bulk Upload Success] Response received:', response);
+        this.bulkId = response.bulkId;
+        this.bulkFileCount = response.fileCount;  // Store CV count from response
+        this.loading = false;
+        this.bulkProcessing = false;
+        this.bulkStatus = `Successfully uploaded ${response.fileCount} files. Ready for template selection.`;
+        
+        // Set bulk flow BEFORE logging
+        this.isBulkFlow = true;
+        this.showBulkUploadModal = false;
+        
+        console.log('📝 [Bulk Upload] Stored values:', {
+          bulkId: this.bulkId,
+          bulkFileCount: this.bulkFileCount,
+          isBulkFlow: this.isBulkFlow
+        });
+        
+        this.showToastNotification(`✅ ${response.fileCount} files uploaded successfully!`, 'success');
+        
+        // Automatically show template selector
+        setTimeout(() => {
+          this.showBulkTemplateSelector();
+        }, 500);
+      },
+      error: (error: any) => {
+        this.loading = false;
+        this.bulkProcessing = false;
+        const errorMsg = error.error?.error?.message || 'Failed to upload bulk files.';
+        this.errorMessage = `Upload failed: ${errorMsg}`;
+        this.showToastNotification(`❌ ${errorMsg}`, 'error');
+      },
+    });
+  }
+
+  showBulkTemplateSelector(): void {
+    if (!this.sessionId || !this.bulkId) {
+      this.errorMessage = 'Invalid bulk session. Please restart.';
+      console.error('❌ [Show Bulk Template Selector] Missing sessionId or bulkId');
+      return;
+    }
+
+    console.log('📋 [Show Bulk Template Selector] Showing templates for bulk flow:', {
+      bulkId: this.bulkId,
+      bulkFileCount: this.bulkFileCount,
+      isBulkFlow: this.isBulkFlow
+    });
+
+    this.loading = true;
+    this.errorMessage = '';
+    this.api.getTemplates().subscribe({
+      next: (res: any) => {
+        this.templates = res.templates;
+        this.generateTemplatePreview();
+        this.showTemplateModal = true;
+        this.selectedTemplateId = null;
+        this.loading = false;
+        
+        // IMPORTANT: Keep isBulkFlow = true while in template selection flow
+        console.log('✅ [Show Bulk Template Selector] Templates loaded, isBulkFlow preserved as:', this.isBulkFlow);
+      },
+      error: () => {
+        this.errorMessage = 'Failed to load templates.';
+        this.loading = false;
+      },
+    });
+  }
+
+  selectBulkTemplate(templateId: string): void {
+    console.log('🔵 [Select Bulk Template] Template selection initiated with templateId:', templateId);
+    console.log('📊 [Select Bulk Template] State at method entry:', {
+      bulkId: this.bulkId,
+      bulkFileCount: this.bulkFileCount,
+      isBulkFlow: this.isBulkFlow,
+      sessionId: this.sessionId
+    });
+    
+    if (!templateId) {
+      this.errorMessage = 'Please select a template first.';
+      console.error('❌ [Select Bulk Template] No template ID provided');
+      return;
+    }
+    
+    if (!this.bulkId) {
+      this.errorMessage = 'No bulk job found. Please upload files first.';
+      console.error('❌ [Select Bulk Template] CRITICAL: No bulk job (bulkId is null)!');
+      console.error('❌ [Select Bulk Template] This indicates bulk state was lost before template selection!');
+      console.log('📊 [Select Bulk Template] Complete state:', {
+        bulkId: this.bulkId,
+        bulkFileCount: this.bulkFileCount,
+        isBulkFlow: this.isBulkFlow,
+        selectedTemplateId: this.selectedTemplateId,
+        showTemplateModal: this.showTemplateModal
+      });
+      // Try to recover or provide helpful error
+      this.showToastNotification('❌ Bulk job data lost. Please start over with bulk upload.', 'error');
+      return;
+    }
+    
+    // Ensure bulk state is fresh
+    this.isBulkFlow = true;  // Guarantee this is true
+    this.selectedTemplateId = templateId;
+    this.showTemplateModal = false;
+    this.loading = false;
+    this.errorMessage = '';
+    
+    console.log('✅ [Select Bulk Template] Template selected successfully:', {
+      bulkId: this.bulkId,
+      bulkFileCount: this.bulkFileCount,
+      selectedTemplateId: this.selectedTemplateId,
+      isBulkFlow: this.isBulkFlow
+    });
+    
+    this.showToastNotification('✅ Template selected! Click "Bulk Download" to export.', 'success');
+  }
+
+  private processBulkCvs(): void {
+    console.log('🔄 [Process Bulk CVs] Starting bulk export process...');
+    
+    if (!this.bulkId || !this.selectedTemplateId) {
+      this.errorMessage = 'Missing bulk ID or template selection.';
+      console.error('❌ [Process Bulk CVs] Missing required fields:', {
+        bulkId: this.bulkId,
+        selectedTemplateId: this.selectedTemplateId
+      });
+      return;
+    }
+
+    console.log('📋 [Process Bulk CVs] Parameters:', {
+      bulkId: this.bulkId,
+      format: this.bulkExportFormat,
+      templateId: this.selectedTemplateId,
+      language: this.selectedLanguage,
+      fileCount: this.bulkFileCount
+    });
+
+    this.loading = true;
+    this.bulkProcessing = true;
+    this.bulkStatus = `Processing ${this.bulkFileCount} CVs with selected template...`;
+    this.errorMessage = '';
+    this.bulkProgress = 0;
+    this.bulkDownloadStarted = false;
+
+    if (this.bulkPollInterval) {
+      console.log('🧹 [Process Bulk CVs] Clearing existing polling interval before starting new export');
+      clearInterval(this.bulkPollInterval);
+      this.bulkPollInterval = null;
+    }
+
+    this.api.startBulkExport(this.bulkId, this.bulkExportFormat, this.selectedTemplateId, this.selectedLanguage).subscribe({
+      next: (response: any) => {
+        console.log('✅ [Start Bulk Export] API Response:', response);
+        this.bulkStatus = 'Processing started. Checking progress...';
+        
+        // Poll for completion
+        this.pollBulkProgressStatus();
+      },
+      error: (error: any) => {
+        this.loading = false;
+        this.bulkProcessing = false;
+        const errorMsg = error.error?.detail || 'Failed to start bulk processing.';
+        this.errorMessage = `Processing failed: ${errorMsg}`;
+        console.error('❌ [Start Bulk Export] Error:', error);
+        this.showToastNotification(`❌ ${errorMsg}`, 'error');
+      },
+    });
+  }
+
+  private pollBulkProgressStatus(): void {
+    console.log('⏱️  [Poll Status] Starting status polling for bulkId:', this.bulkId);
+    
+    if (!this.bulkId) {
+      console.error('❌ [Poll Status] No bulkId available for polling');
+      return;
+    }
+
+    if (this.bulkPollInterval) {
+      console.log('🧹 [Poll Status] Existing polling interval found. Clearing before creating a new one.');
+      clearInterval(this.bulkPollInterval);
+      this.bulkPollInterval = null;
+    }
+
+    let pollCount = 0;
+    this.bulkPollInterval = setInterval(() => {
+      pollCount++;
+      console.log(`🔍 [Poll Status] Attempt #${pollCount} for bulkId: ${this.bulkId}`);
+      
+      this.api.getBulkExportStatus(this.bulkId!).subscribe({
+        next: (status: any) => {
+          console.log(`📊 [Poll Status] Current status:`, {
+            status: status.status,
+            processedFiles: status.processedFiles,
+            totalFiles: status.totalFiles,
+            failedFiles: status.failedFiles,
+            progress: `${Math.round((status.processedFiles / status.totalFiles) * 100)}%`
+          });
+          
+          this.bulkProgress = Math.round((status.processedFiles / status.totalFiles) * 100);
+          this.bulkStatus = `Processing: ${status.processedFiles}/${status.totalFiles} files completed (${this.bulkProgress}%)`;
+
+          if (status.status === 'completed') {
+            if (this.bulkDownloadStarted) {
+              console.log('ℹ️ [Poll Status] Completion already handled. Skipping duplicate download trigger.');
+              return;
+            }
+
+            this.bulkDownloadStarted = true;
+            if (this.bulkPollInterval) {
+              clearInterval(this.bulkPollInterval);
+              this.bulkPollInterval = null;
+            }
+            console.log('✅ [Poll Status] Bulk export COMPLETED!');
+            this.loading = false;
+            this.bulkProcessing = false;
+            this.bulkStatus = `✓ All ${status.totalFiles} CVs processed successfully!`;
+            this.bulkProgress = 100;
+            this.showToastNotification('✅ Bulk processing completed!', 'success');
+            
+            // Automatically download the ZIP file after processing completes
+            setTimeout(() => {
+              this.downloadBulkCvsAfterProcessing();
+            }, 500);
+          }
+        },
+        error: (error: any) => {
+          if (this.bulkPollInterval) {
+            clearInterval(this.bulkPollInterval);
+            this.bulkPollInterval = null;
+          }
+          this.loading = false;
+          this.bulkProcessing = false;
+          this.errorMessage = 'Failed to check bulk processing status.';
+          console.error('❌ [Poll Status] Error checking status:', error);
+        },
+      });
+    }, 2000); // Poll every 2 seconds
+  }
+
+  openBulkExportModal(): void {
+    console.log('📂 [Open Export Modal] Bulk export modal triggered:', {
+      bulkId: this.bulkId,
+      bulkFileCount: this.bulkFileCount,
+      selectedTemplateId: this.selectedTemplateId,
+      isBulkFlow: this.isBulkFlow,
+      showBulkExportModal: this.showBulkExportModal
+    });
+    
+    if (!this.bulkId) {
+      this.errorMessage = 'No bulk job found. Please upload files first.';
+      console.error('❌ [Open Export Modal] CRITICAL: No bulkId available!');
+      console.error('❌ [Open Export Modal] Bulk state: isBulkFlow=' + this.isBulkFlow + ', bulkFileCount=' + this.bulkFileCount);
+      return;
+    }
+    
+    if (!this.selectedTemplateId) {
+      this.errorMessage = 'Please select a template first.';
+      console.error('❌ [Open Export Modal] No template selected. Available templates:', this.templates?.length);
+      return;
+    }
+    
+    console.log('✅ [Open Export Modal] All validations passed, showing export format modal');
+    this.showBulkExportModal = true;
+  }
+
+  downloadBulkCvs(): void {
+    console.log('🔵 [Download Bulk CVs] Direct download method called');
+    // Legacy method - now handled directly in template
+    this.showBulkExportModal = true;
+  }
+
+  selectBulkExportFormat(format: 'pdf' | 'docx' | 'pptx' | 'json'): void {
+    console.log('🎯 [Format Selected] User selected export format:', {
+      format: format,
+      bulkId: this.bulkId,
+      bulkFileCount: this.bulkFileCount,
+      templateId: this.selectedTemplateId
+    });
+    
+    this.bulkExportFormat = format;
+    this.showBulkExportModal = false;
+    
+    // Start processing with selected format
+    this.processBulkCvs();
+  }
+
+  private downloadBulkCvsAfterProcessing(): void {
+    console.log('⬇️  [Download Bulk] Starting bulk file download for bulkId:', this.bulkId);
+    
+    if (!this.bulkId) {
+      this.errorMessage = 'No bulk job to download.';
+      console.error('❌ [Download Bulk] No bulkId available');
+      return;
+    }
+
+    if (this.loading) {
+      console.log('ℹ️ [Download Bulk] Download already in progress. Skipping duplicate request.');
+      return;
+    }
+
+    this.loading = true;
+    console.log('📡 [Download Bulk] Requesting ZIP file from API...');
+    
+    this.api.downloadBulkFiles(this.bulkId).subscribe({
+      next: (response: any) => {
+        console.log('✅ [Download Bulk] ZIP file received, size:', response.body?.size || 'unknown');
+        this.loading = false;
+        const blob = response.body;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = this.getBulkZipFilename();
+        document.body.appendChild(link);
+        
+        console.log('💾 [Download Bulk] Triggering browser download with filename:', link.download);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        console.log('✅ [Download Bulk] Download completed successfully!');
+        this.showToastNotification('✅ Bulk download completed!', 'success');
+        
+        // Reset bulk flow
+        this.resetBulkFlow();
+      },
+      error: (error: any) => {
+        this.loading = false;
+        const errorMsg = error.error?.detail || 'Failed to download bulk CVs.';
+        this.errorMessage = `Download failed: ${errorMsg}`;
+        console.error('❌ [Download Bulk] Download error:', error);
+        this.showToastNotification(`❌ ${errorMsg}`, 'error');
+      },
+    });
+  }
+
+  private resetBulkFlow(): void {
+    console.log('🔄 [Reset Bulk Flow] Resetting bulk download state...');
+    if (this.bulkPollInterval) {
+      clearInterval(this.bulkPollInterval);
+      this.bulkPollInterval = null;
+    }
+    this.isBulkFlow = false;
+    this.bulkId = null;
+    this.bulkFileCount = 0;
+    this.bulkFiles = [];
+    this.bulkStatus = '';
+    this.bulkProgress = 0;
+    this.selectedTemplateId = null;
+    this.bulkProcessing = false;
+    this.bulkDownloadStarted = false;
+    console.log('✅ [Reset Bulk Flow] Bulk flow reset complete');
   }
 }
