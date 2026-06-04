@@ -37,6 +37,33 @@ class ExportService:
         self.translation_service = TranslationService()
         self._llm_service = None
 
+    @staticmethod
+    def _sanitize_filename_part(value: Any, fallback: str) -> str:
+        text = str(value or "").strip().lower()
+        text = re.sub(r"[^a-z0-9]+", "_", text)
+        text = re.sub(r"_+", "_", text).strip("_")
+        return text or fallback
+
+    def _build_cv_download_filename(self, cv: CvSchema, extension: str) -> str:
+        personal_info = getattr(cv, "personalInfo", None)
+        full_name = getattr(personal_info, "fullName", "") if personal_info else ""
+        role = getattr(personal_info, "role", "") if personal_info else ""
+
+        if not role:
+            header = getattr(cv, "header", {}) or {}
+            role = header.get("jobTitle", "") if isinstance(header, dict) else ""
+
+        name_parts = [part for part in str(full_name or "").split() if part]
+        first_name = name_parts[0] if name_parts else "unknown"
+        last_name = name_parts[-1] if len(name_parts) > 1 else "employee"
+
+        safe_first_name = self._sanitize_filename_part(first_name, "unknown")
+        safe_last_name = self._sanitize_filename_part(last_name, "employee")
+        safe_role = self._sanitize_filename_part(role, "role")
+        safe_extension = self._sanitize_filename_part(extension, "pdf")
+
+        return f"{safe_first_name}_{safe_last_name}_{safe_role}.{safe_extension}"
+
     async def create_export_job(self, cv: CvSchema, fmt: str, template_id: str = "ntt-classic", language: str = "en") -> Dict[str, Any]:
         """Generate the file synchronously (POC) and store the job record.
 
@@ -64,19 +91,19 @@ class ExportService:
             if fmt == "json":
                 file_path = self._export_json(cv, file_id)
                 media_type = "application/json"
-                filename = f"{cv.personalInfo.fullName}_cv.json"
+                filename = self._build_cv_download_filename(cv, "json")
             elif fmt == "docx":
                 file_path = self._export_docx(cv, file_id, template_id, language)
                 media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                filename = f"{cv.personalInfo.fullName}_cv.docx"
+                filename = self._build_cv_download_filename(cv, "docx")
             elif fmt == "pdf":
                 file_path = self._export_pdf(cv, file_id, template_id, language)
                 media_type = "application/pdf"
-                filename = f"{cv.personalInfo.fullName}_cv.pdf"
+                filename = self._build_cv_download_filename(cv, "pdf")
             elif fmt in ("ppt", "pptx"):
                 file_path = self._export_ppt(cv, file_id, template_id)
                 media_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-                filename = f"{cv.personalInfo.fullName}_cv.pptx"
+                filename = self._build_cv_download_filename(cv, "pptx")
             else:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Unknown format: {fmt}")
 

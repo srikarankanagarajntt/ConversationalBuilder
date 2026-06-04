@@ -45,7 +45,7 @@ class BulkService:
         return text or fallback
 
     def _build_employee_filename(self, cv: CvSchema, extension: str) -> str:
-        """Build employee_firstname_lastname_role filename without random IDs."""
+        """Build firstname_lastname_role filename without random IDs."""
         personal_info = getattr(cv, "personalInfo", None)
         full_name = getattr(personal_info, "fullName", "") if personal_info else ""
         role = getattr(personal_info, "role", "") if personal_info else ""
@@ -63,7 +63,7 @@ class BulkService:
         safe_role = self._sanitize_filename_part(role, "role")
         safe_extension = self._sanitize_filename_part(extension, "pdf")
 
-        return f"employee_{safe_first_name}_{safe_last_name}_{safe_role}.{safe_extension}"
+        return f"{safe_first_name}_{safe_last_name}_{safe_role}.{safe_extension}"
     
     def create_bulk_job(self, cv_list: List[CvSchema], template_id: str = "ntt-classic", language: str = "en", format: str = "pdf") -> Dict[str, Any]:
         """Create a new bulk processing job.

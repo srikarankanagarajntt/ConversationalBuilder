@@ -70,6 +70,25 @@ export class AppComponent implements OnInit {
     return `CV_NTTdata_${formatLabel}.zip`;
   }
 
+  private sanitizeFilenamePart(value: any, fallback: string): string {
+    const text = String(value || '').trim().toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_+|_+$/g, '');
+    return text || fallback;
+  }
+
+  private getCvDownloadFilename(format: string): string {
+    const fullName = this.cvData?.personalInfo?.fullName || '';
+    const role = this.cvData?.personalInfo?.role || this.cvData?.header?.jobTitle || '';
+    const nameParts = String(fullName).split(/\s+/).filter(Boolean);
+    const firstName = nameParts[0] || 'unknown';
+    const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : 'employee';
+    const extension = format === 'ppt' ? 'pptx' : format;
+
+    return `${this.sanitizeFilenamePart(firstName, 'unknown')}_${this.sanitizeFilenamePart(lastName, 'employee')}_${this.sanitizeFilenamePart(role, 'role')}.${this.sanitizeFilenamePart(extension, 'pdf')}`;
+  }
+
   // Personal info form fields
   personalFullName = '';
   personalEmail = '';
@@ -444,7 +463,7 @@ export class AppComponent implements OnInit {
         //   - attachment; filename="John_cv.pdf" (RFC 5987 - quoted)
         //   - attachment; filename=John_cv.pdf (unquoted)
         //   - attachment; filename*=UTF-8''John_cv.pdf (RFC 5987 - encoded)
-        let filename = `resume.${format}`; // fallback filename
+        let filename = this.getCvDownloadFilename(format);
         
         const contentDisposition = response.headers.get('content-disposition');
         if (contentDisposition) {
