@@ -20,7 +20,8 @@ class PersonalInfo(BaseSchemaModel):
     phone: str = ""
     location: str = ""
     summary: str = ""
-    role: str = ""  # Job title/role of the person
+    role: str = ""
+    profilePictureUrl: str = ""  # Local path: /temp/images/filename.jpg
 
 
 class ExperienceEntry(BaseSchemaModel):

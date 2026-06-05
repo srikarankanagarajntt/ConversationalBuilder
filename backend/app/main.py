@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import settings
 from app.core.logging_config import configure_logging
-from app.api import health, conversation, voice, upload, template, preview, export, llm, bulk_upload, bulk_export
+from app.api import health, conversation, voice, upload, template, preview, export, llm, bulk_upload, bulk_export,profile_picture
 
 configure_logging()
 logger = logging.getLogger(__name__)
@@ -41,6 +41,7 @@ app.include_router(preview.router, prefix="/api", tags=["Preview"])
 app.include_router(export.router, prefix="/api", tags=["Export"])
 app.include_router(bulk_export.router, prefix="/api", tags=["Bulk Export"])
 app.include_router(llm.router, prefix="/api", tags=["LLM POC"])
+app.include_router(profile_picture.router, prefix="/api", tags=["Upload Profile Picture"])
 
 
 def _exc_info(exc: BaseException) -> tuple[type[BaseException], BaseException, object]:

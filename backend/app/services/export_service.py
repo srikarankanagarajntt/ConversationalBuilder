@@ -9,14 +9,22 @@ import tempfile
 import threading
 import uuid
 import asyncio
+import logging
 from datetime import datetime
 from typing import Any, Dict, Iterable, List, Tuple
 
+from docx.shared import Inches, Pt
+from docx import Document
+from docxtpl import InlineImage
 from fastapi import HTTPException, status
 
 from app.models.cv_schema import CvSchema
 from app.services.llm_service import LLMService
 from app.services.translation_service import TranslationService
+
+# Configure logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 # In-memory job store — keyed by job_id
 _jobs: Dict[str, Dict[str, Any]] = {}
@@ -239,7 +247,7 @@ class ExportService:
         )
 
     def _render_docx_from_template(self, cv: CvSchema, template_id: str, language: str = "en") -> str:
-        """Render DOCX from master template with Jinja2 placeholders.
+        """Render DOCX from master template with Jinja2 placeholders including profile image.
 
         Args:
             cv: CV schema to render
@@ -250,7 +258,8 @@ class ExportService:
             Path to rendered temporary DOCX file
         """
         try:
-            from docxtpl import DocxTemplate
+            from docxtpl import DocxTemplate, InlineImage
+            from io import BytesIO
         except ImportError:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -268,28 +277,52 @@ class ExportService:
             )
 
         try:
-            # Load template
+            # Load template with docxtpl
             doc = DocxTemplate(master_template)
 
             # Prepare context for Jinja2 rendering
             context = self._prepare_template_context(cv)
             
+            # Handle profile picture - add as InlineImage if exists
+            profile_pic = None
+            if cv.personalInfo and cv.personalInfo.profilePictureUrl:
+                imagePath = cv.personalInfo.profilePictureUrl
+                actualImagePath = imagePath.replace("/", os.sep)
+                if os.path.exists(actualImagePath):
+                    try:
+                        # Create InlineImage for template rendering
+                        profile_pic = InlineImage(doc, actualImagePath, width=Inches(1.2), height=Inches(1.5))
+                        context["profile_pic"] = profile_pic
+                        logger.info(f"✓ Profile picture added to context: {actualImagePath}")
+                    except Exception as e:
+                        logger.warning(f"Could not create InlineImage for profile picture: {e}")
+                        context["profile_pic"] = None
+                else:
+                    logger.warning(f"Profile picture file not found at {actualImagePath}")
+                    context["profile_pic"] = None
+            else:
+                logger.info("No profile picture URL found in CV data")
+                context["profile_pic"] = None
+
             # Ensure all strings in context are properly encoded for DOCX
             context = self._sanitize_context_for_docx(context)
 
-            # Render template
+            # Render template with all context including profile_pic
             doc.render(context)
 
-            # Save to temporary file
+            # Save final DOCX to temporary file
             temp_file = os.path.join(tempfile.gettempdir(), f"rendered_{uuid.uuid4()}.docx")
             doc.save(temp_file)
 
+            logger.info(f"✓ DOCX rendered successfully with profile picture template: {temp_file}")
             return temp_file
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"DOCX rendering failed: {str(e)}"
             )
+
+
 
     def _sanitize_context_for_docx(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """Sanitize context values to ensure proper DOCX encoding."""
@@ -578,6 +611,19 @@ class ExportService:
                 },
             )
 
+            # Add profile image to PPT if available
+            if cv.personalInfo and cv.personalInfo.profilePictureUrl:
+                try:
+                    imagePath = cv.personalInfo.profilePictureUrl
+                    actualImagePath = imagePath.replace("/", os.sep)
+                    if os.path.exists(actualImagePath):
+                        self._add_profile_image_to_ppt(presentation, actualImagePath)
+                        logger.info(f"✓ Profile image added to PPT: {actualImagePath}")
+                    else:
+                        logger.warning(f"Profile picture file not found at {actualImagePath}")
+                except Exception as e:
+                    logger.warning(f"Could not add profile picture to PPT: {e}")
+
             output_path = os.path.join(OUTPUT_DIR, f"{file_id}.pptx")
             presentation.save(output_path)
             return output_path
@@ -620,6 +666,44 @@ class ExportService:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"PPT template not found for template_id '{template_id}'",
         )
+
+    def _add_profile_image_to_ppt(self, presentation: Any, image_path: str) -> None:
+        """Add profile image to PPT slide at configured coordinates and size.
+        
+        Args:
+            presentation: python-pptx Presentation object
+            image_path: Path to the profile picture image file
+        """
+        try:
+            from pptx.util import Inches
+            from app.core.config import settings
+            
+            logger.info(f"Adding profile image to PPT from: {image_path}")
+            
+            # Get settings from config
+            left = Inches(settings.ppt_profile_image_left)
+            top = Inches(settings.ppt_profile_image_top)
+            width = Inches(settings.ppt_profile_image_width)
+            height = Inches(settings.ppt_profile_image_height)
+            rotation = settings.ppt_profile_image_rotation
+            
+            logger.info(f"Profile image settings - Position: ({settings.ppt_profile_image_left}\", {settings.ppt_profile_image_top}\"), Size: {settings.ppt_profile_image_width}\" x {settings.ppt_profile_image_height}\", Rotation: {rotation}°")
+            
+            # Add image to first slide (title slide)
+            if presentation.slides:
+                slide = presentation.slides[0]
+                picture = slide.shapes.add_picture(image_path, left, top, width=width, height=height)
+                
+                # Apply rotation if specified
+                if rotation != 0:
+                    picture.rotation = rotation
+                
+                logger.info(f"✓ Profile image added to PPT slide with rotation: {rotation}°")
+            else:
+                logger.warning("No slides found in presentation")
+                
+        except Exception as e:
+            logger.error(f"Error adding profile image to PPT: {e}", exc_info=True)
 
     def _normalize_cv_for_ppt(self, cv: Any) -> Dict[str, Any]:
         """Normalize incoming CV payload into stable fields for PPT rendering."""

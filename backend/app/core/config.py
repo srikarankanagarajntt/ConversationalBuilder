@@ -24,6 +24,15 @@ class Settings(BaseSettings):
     # CORS — stored as comma-separated string, exposed as list
     allowed_origins: str = "http://localhost:4200"
 
+    # PPT Profile Image Configuration
+    ppt_profile_image_left: float = 1.0  # Horizontal position from left in inches
+    ppt_profile_image_top: float = 0.1   # Vertical position from top in inches
+    ppt_profile_image_width: float = 1.21  # Width in inches
+    ppt_profile_image_height: float = 1.56  # Height in inches
+    ppt_profile_image_rotation: int = 0  # Rotation in degrees
+    ppt_profile_image_scale_width: float = 26.0  # Scale width percentage
+    ppt_profile_image_scale_height: float = 26.0  # Scale height percentage
+
     @property
     def allowed_origins_list(self) -> List[str]:
         return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
