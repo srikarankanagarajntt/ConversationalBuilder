@@ -1,25 +1,31 @@
-version: "3.9"
-
 services:
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    image: cv-builder-backend:latest
     ports:
       - "8000:8000"
     env_file:
       - ./backend/.env
+    environment:
+      APP_ENV: production
+      APP_PORT: 8000
+      ALLOWED_ORIGINS: http://localhost:4200,http://localhost:8000
     volumes:
-      - ./backend:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      - backend_exports:/app/exports
+    restart: unless-stopped
 
   frontend:
-    image: node:20-alpine
-    working_dir: /app
-    volumes:
-      - ./frontend:/app
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: cv-builder-frontend:latest
     ports:
-      - "4200:4200"
-    command: sh -c "npm install && npx ng serve --host 0.0.0.0 --poll 2000"
+      - "4200:80"
     depends_on:
       - backend
+    restart: unless-stopped
+
+volumes:
+  backend_exports:

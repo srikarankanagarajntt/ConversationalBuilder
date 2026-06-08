@@ -34,6 +34,15 @@ export interface TemplateListResponse {
   templates: TemplateOption[];
 }
 
+export interface ProfilePictureUploadResponse {
+  sessionId: string;
+  profilePictureUrl: string;
+  fileName: string;
+  fileSize: number;
+  savedAt: string;
+  cvDraft: any;
+}
+
 export interface PersonalInfo {
   fullName: string;
   email: string;
@@ -122,6 +131,13 @@ export class CvApiService {
     formData.append('file', file);
     formData.append('sessionId', sessionId);
     return this.http.post<any>(`${environment.apiBaseUrl}/upload/cv`, formData);
+  }
+
+  uploadProfilePicture(file: File, sessionId: string): Observable<ProfilePictureUploadResponse> {
+    const formData = new FormData();
+    formData.append('sessionId', sessionId);
+    formData.append('file', file);
+    return this.http.post<ProfilePictureUploadResponse>(`${environment.apiBaseUrl}/profile-picture/upload`, formData);
   }
 
   uploadBulkCv(files: File[], sessionId: string): Observable<any> {

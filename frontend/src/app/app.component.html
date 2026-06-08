@@ -46,6 +46,14 @@
           <span>Upload Resume</span>
           <input #fileInput type="file" accept=".pdf,.docx,.txt" (change)="onFileUpload($event)" hidden>
         </button>
+
+        <button class="sidebar-btn photo-upload-btn" (click)="photoInput.click()" [disabled]="loading || !sessionId">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 11.5l2.5 3.01L14.5 10l4.5 6H5l3.5-4.5z"/>
+          </svg>
+          <span>{{ cvData?.personalInfo?.profilePictureUrl ? 'Change Photo' : 'Upload Photo' }}</span>
+          <input #photoInput type="file" accept="image/jpeg,image/png,image/gif" (change)="onPhotoUpload($event)" hidden>
+        </button>
       </div>
 
       <div class="sidebar-section">
@@ -67,7 +75,7 @@
           <div class="sidebar-progress-bar">
             <div class="sidebar-progress-fill" [style.width.%]="getFieldsProgress()"></div>
           </div>
-          <span class="sidebar-progress-text">{{ getFieldsProgress() }}% Complete</span>
+          <span class="sidebar-progress-text">{{ getFieldsProgress() }}% Coverage </span>
         </div>
         <div class="sidebar-fields-list">
           <div class="sidebar-field-item" [class.completed]="isFieldCompleted('personalInfo')">
@@ -319,13 +327,20 @@
       <div class="preview-content">
         <!-- Personal Info with Role/Job Title -->
         <div *ngIf="cvData?.personalInfo" class="preview-section">
-          <h3>{{ cvData.personalInfo.fullName || 'Your Name' }}</h3>
-          <p *ngIf="cvData.personalInfo.role || cvData.header?.jobTitle" class="job-title-header">
-            {{ cvData.personalInfo.role || cvData.header?.jobTitle }}
-          </p>
-          <p *ngIf="cvData.personalInfo.email" class="contact-info">📧 {{ cvData.personalInfo.email }}</p>
-          <p *ngIf="cvData.personalInfo.phone" class="contact-info">📱 {{ cvData.personalInfo.phone }}</p>
-          <p *ngIf="cvData.personalInfo.location" class="contact-info">📍 {{ cvData.personalInfo.location }}</p>
+          <div class="preview-profile-row">
+            <div class="preview-profile-copy">
+              <h3>{{ cvData.personalInfo.fullName || 'Your Name' }}</h3>
+              <p *ngIf="cvData.personalInfo.role || cvData.header?.jobTitle" class="job-title-header">
+                {{ cvData.personalInfo.role || cvData.header?.jobTitle }}
+              </p>
+              <p *ngIf="cvData.personalInfo.email" class="contact-info">📧 {{ cvData.personalInfo.email }}</p>
+              <p *ngIf="cvData.personalInfo.phone" class="contact-info">📱 {{ cvData.personalInfo.phone }}</p>
+              <p *ngIf="cvData.personalInfo.location" class="contact-info">📍 {{ cvData.personalInfo.location }}</p>
+            </div>
+            <div *ngIf="profilePhotoPreviewUrl" class="preview-photo-frame">
+              <img [src]="profilePhotoPreviewUrl" alt="Profile photo" class="preview-profile-photo">
+            </div>
+          </div>
         </div>
 
         <!-- Professional Summary (bulleted, italic) -->

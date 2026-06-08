@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClientModule, HttpClient } from '@angular/common/http';
 import { DomSanitizer } from '@angular/platform-browser';
 
-import { ConversationResponse, CvApiService, SessionResponse, TemplateOption, PersonalInfo } from './services/cv-api.service';
+import { ConversationResponse, CvApiService, ProfilePictureUploadResponse, SessionResponse, TemplateOption, PersonalInfo } from './services/cv-api.service';
 import { environment } from '../environments/environment';
 
 interface Message {
@@ -50,6 +50,7 @@ export class AppComponent implements OnInit {
   cvData: any = null;
   templates: TemplateWithPreview[] = [];
   selectedTemplateId: string | null = null;
+  profilePhotoPreviewUrl: string | null = null;
 
   // Bulk processing properties
   showBulkUploadModal = false;
@@ -530,6 +531,76 @@ export class AppComponent implements OnInit {
     
     // Reset input
     input.value = '';
+  }
+
+  onPhotoUpload(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = input.files;
+
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    const file = files[0];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      this.errorMessage = 'Invalid photo type. Please upload JPG, PNG, or GIF image.';
+      this.showToastNotification('Invalid photo type. Please upload JPG, PNG, or GIF image.', 'error');
+      input.value = '';
+      return;
+    }
+
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      this.errorMessage = 'Photo size exceeds 10MB limit.';
+      this.showToastNotification('Photo size exceeds 10MB limit.', 'error');
+      input.value = '';
+      return;
+    }
+
+    const localPreviewUrl = URL.createObjectURL(file);
+    this.uploadProfilePhoto(file, localPreviewUrl);
+    input.value = '';
+  }
+
+  private uploadProfilePhoto(file: File, localPreviewUrl: string): void {
+    if (!this.sessionId) {
+      URL.revokeObjectURL(localPreviewUrl);
+      this.errorMessage = 'Please start a new chat session first.';
+      return;
+    }
+
+    this.loading = true;
+    this.errorMessage = '';
+
+    this.api.uploadProfilePicture(file, this.sessionId).subscribe({
+      next: (response: ProfilePictureUploadResponse) => {
+        this.setProfilePhotoPreview(localPreviewUrl);
+        this.cvData = response.cvDraft || this.cvData || {};
+
+        if (!this.cvData.personalInfo) {
+          this.cvData.personalInfo = {};
+        }
+        this.cvData.personalInfo.profilePictureUrl = response.profilePictureUrl;
+
+        this.loading = false;
+        this.showToastNotification('Profile photo uploaded successfully.', 'success');
+      },
+      error: (error) => {
+        URL.revokeObjectURL(localPreviewUrl);
+        this.loading = false;
+        const errorMsg = error.error?.detail || error.error?.message || 'Failed to upload profile photo. Please try again.';
+        this.errorMessage = `Photo upload failed: ${errorMsg}`;
+        this.showToastNotification(errorMsg, 'error');
+      },
+    });
+  }
+
+  private setProfilePhotoPreview(url: string): void {
+    if (this.profilePhotoPreviewUrl) {
+      URL.revokeObjectURL(this.profilePhotoPreviewUrl);
+    }
+    this.profilePhotoPreviewUrl = url;
   }
 
   private uploadFile(file: File): void {
@@ -1263,6 +1334,9 @@ export class AppComponent implements OnInit {
   }
 
   createNewSession(): void {
+    if (this.profilePhotoPreviewUrl) {
+      URL.revokeObjectURL(this.profilePhotoPreviewUrl);
+    }
     this.sessionId = '';
     this.message = '';
     this.conversationHistory = [];
@@ -1270,6 +1344,7 @@ export class AppComponent implements OnInit {
     this.assistantReply = '';
     this.errorMessage = '';
     this.cvData = null;
+    this.profilePhotoPreviewUrl = null;
     this.sidebarOpen = false;
     this.selectedTemplateId = null;
     this.hasDownloadedFile = false;

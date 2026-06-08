@@ -71,8 +71,13 @@ App → http://localhost:4200
 ### 3 — Docker Compose (both services)
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
+
+Frontend → http://localhost:4200  
+Backend API docs → http://localhost:8000/docs
+
+The Docker setup builds a production Angular bundle served by Nginx and proxies `/api` requests to the FastAPI backend container. PDF export in Docker uses LibreOffice installed in the backend image.
 
 ---
 

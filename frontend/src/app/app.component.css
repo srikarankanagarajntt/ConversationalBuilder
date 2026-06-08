@@ -113,7 +113,8 @@
   box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
 }
 
-.file-upload-btn {
+.file-upload-btn,
+.photo-upload-btn {
   position: relative;
   overflow: hidden;
   width: 100%;
@@ -133,13 +134,15 @@
   margin-bottom: 8px;
 }
 
-.file-upload-btn:hover:not(:disabled) {
+.file-upload-btn:hover:not(:disabled),
+.photo-upload-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #0052a3 0%, #003a7a 100%);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
 }
 
-.file-upload-btn:disabled {
+.file-upload-btn:disabled,
+.photo-upload-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -1206,6 +1209,35 @@
   margin-bottom: 24px;
 }
 
+.preview-profile-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.preview-profile-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.preview-photo-frame {
+  flex: 0 0 112px;
+  width: 112px;
+  height: 140px;
+  border: 1px solid #d7dce5;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f8f9fb;
+}
+
+.preview-profile-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .preview-section h3 {
   font-size: 28px;
   margin: 0 0 8px 0;
@@ -1941,6 +1973,14 @@
   .template-modal {
     width: 90vw;
     max-width: 900px;
+  }
+  
+  .preview-profile-row {
+    flex-direction: column-reverse;
+  }
+  
+  .preview-photo-frame {
+    flex-basis: auto;
   }
 
   .templates-grid {
